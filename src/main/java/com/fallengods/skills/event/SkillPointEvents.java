@@ -1,0 +1,46 @@
+package com.fallengods.skills.event;
+
+import com.fallengods.skills.FallenGodsSkills;
+import com.fallengods.skills.capability.SkillDataCapability;
+import com.fallengods.skills.network.PacketHandler;
+import com.fallengods.skills.network.PacketSyncSkillData;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.network.PacketDistributor;
+
+@Mod.EventBusSubscriber(modid = FallenGodsSkills.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+public class SkillPointEvents {
+
+    @SubscribeEvent
+    public static void onMobKilled(LivingDeathEvent event) {
+        // Verifica se a entidade morta é um mob hostil
+        if (!(event.getEntity() instanceof Mob mob))
+            return;
+        if (!(mob instanceof Enemy))
+            return;
+        if (mob.level().isClientSide())
+            return;
+
+        // Verifica se o responsável pela morte foi um jogador
+        if (!(mob.getKillCredit() instanceof ServerPlayer player))
+            return;
+
+        player.getCapability(SkillDataCapability.PLAYER_SKILL_DATA).ifPresent(data -> {
+            // Só dá pontos se o jogador já escolheu uma classe
+            if (data.getPlayerClass().name().equals("NONE"))
+                return;
+
+            data.addSkillPoints(1);
+
+            // Sincroniza com o cliente
+            PacketHandler.INSTANCE.send(
+                    PacketDistributor.PLAYER.with(() -> player),
+                    new PacketSyncSkillData(data.serializeNBT()));
+        });
+    }
+}

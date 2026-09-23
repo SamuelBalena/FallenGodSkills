@@ -3,10 +3,12 @@ package com.fallengods.skills.event;
 import com.fallengods.skills.FallenGodsSkills;
 import com.fallengods.skills.capability.SkillDataCapability;
 import com.fallengods.skills.classsystem.ClassType;
+import com.fallengods.skills.command.SkillsCommand;
 import com.fallengods.skills.network.PacketHandler;
 import com.fallengods.skills.network.PacketOpenClassScreen;
 import com.fallengods.skills.network.PacketSyncSkillData;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -31,5 +33,10 @@ public class CommonEvents {
                         new PacketOpenClassScreen());
             }
         });
+    }
+
+    @SubscribeEvent
+    public static void onRegisterCommands(RegisterCommandsEvent event) {
+        SkillsCommand.register(event.getDispatcher());
     }
 }
