@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.network.PacketDistributor;
 
 @Mod.EventBusSubscriber(modid = FallenGodsSkills.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CommonEvents {
@@ -20,14 +21,14 @@ public class CommonEvents {
             return;
 
         player.getCapability(SkillDataCapability.PLAYER_SKILL_DATA).ifPresent(data -> {
-            // Sincronizar dados primeiro
-            PacketHandler.INSTANCE.sendTo(
-                    new PacketSyncSkillData(data.serializeNBT()),
-                    player);
+            PacketHandler.INSTANCE.send(
+                    PacketDistributor.PLAYER.with(() -> player),
+                    new PacketSyncSkillData(data.serializeNBT()));
 
-            // Se não tiver classe, abrir GUI
             if (data.getPlayerClass() == ClassType.NONE) {
-                PacketHandler.INSTANCE.sendTo(new PacketOpenClassScreen(), player);
+                PacketHandler.INSTANCE.send(
+                        PacketDistributor.PLAYER.with(() -> player),
+                        new PacketOpenClassScreen());
             }
         });
     }

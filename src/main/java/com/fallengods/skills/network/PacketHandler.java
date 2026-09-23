@@ -6,21 +6,23 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public class PacketHandler {
-    private static final String PROTOCOL_VERSION = "1";
-    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(FallenGodsSkills.MODID, "main"),
-            () -> PROTOCOL_VERSION,
-            PROTOCOL_VERSION::equals,
-            PROTOCOL_VERSION::equals);
+        private static final String PROTOCOL_VERSION = "1";
 
-    private static int id = 0;
+        public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
+                        ResourceLocation.fromNamespaceAndPath(FallenGodsSkills.MODID, "main"),
+                        () -> PROTOCOL_VERSION,
+                        PROTOCOL_VERSION::equals,
+                        PROTOCOL_VERSION::equals);
 
-    public static void register() {
-        INSTANCE.registerMessage(id++, PacketSelectClass.class,
-                PacketSelectClass::encode, PacketSelectClass::decode, PacketSelectClass::handle);
-        INSTANCE.registerMessage(id++, PacketSyncSkillData.class,
-                PacketSyncSkillData::encode, PacketSyncSkillData::decode, PacketSyncSkillData::handle);
-        INSTANCE.registerMessage(id++, PacketOpenClassScreen.class,
-                PacketOpenClassScreen::encode, PacketOpenClassScreen::decode, PacketOpenClassScreen::handle);
-    }
+        private static int id = 0;
+
+        public static void register() {
+                INSTANCE.registerMessage(id++, PacketSelectClass.class,
+                                PacketSelectClass::encode, PacketSelectClass::decode, PacketSelectClass::handle);
+                INSTANCE.registerMessage(id++, PacketSyncSkillData.class,
+                                PacketSyncSkillData::encode, PacketSyncSkillData::decode, PacketSyncSkillData::handle);
+                INSTANCE.registerMessage(id++, PacketOpenClassScreen.class,
+                                PacketOpenClassScreen::encode, PacketOpenClassScreen::decode,
+                                PacketOpenClassScreen::handle);
+        }
 }

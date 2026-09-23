@@ -18,12 +18,8 @@ public class SkillDataCapability {
     public static final Capability<PlayerSkillData> PLAYER_SKILL_DATA = CapabilityManager.get(new CapabilityToken<>() {
     });
 
-    private static final ResourceLocation KEY = new ResourceLocation(FallenGodsSkills.MODID, "skill_data");
-
-    @SubscribeEvent
-    public static void register(RegisterCapabilitiesEvent event) {
-        event.register(PlayerSkillData.class);
-    }
+    private static final ResourceLocation KEY = ResourceLocation.fromNamespaceAndPath(FallenGodsSkills.MODID,
+            "skill_data");
 
     @SubscribeEvent
     public static void attach(AttachCapabilitiesEvent<Entity> event) {
@@ -34,7 +30,6 @@ public class SkillDataCapability {
         }
     }
 
-    // Persistência após morte
     @SubscribeEvent
     public static void onClone(PlayerEvent.Clone event) {
         event.getOriginal().reviveCaps();
@@ -44,5 +39,14 @@ public class SkillDataCapability {
             });
         });
         event.getOriginal().invalidateCaps();
+    }
+
+    // Registro da capability — precisa ficar no MOD bus
+    @Mod.EventBusSubscriber(modid = FallenGodsSkills.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+    public static class ModBusEvents {
+        @SubscribeEvent
+        public static void register(RegisterCapabilitiesEvent event) {
+            event.register(PlayerSkillData.class);
+        }
     }
 }

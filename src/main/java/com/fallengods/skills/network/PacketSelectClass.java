@@ -5,6 +5,7 @@ import com.fallengods.skills.classsystem.ClassType;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.PacketDistributor;
 
 import java.util.function.Supplier;
 
@@ -30,11 +31,11 @@ public class PacketSelectClass {
                 player.getCapability(SkillDataCapability.PLAYER_SKILL_DATA).ifPresent(data -> {
                     if (data.getPlayerClass() == ClassType.NONE) {
                         data.setPlayerClass(msg.classType);
-                        data.addSkillPoints(1); // Pontos iniciais
-                        // Sincronizar de volta para o cliente
-                        PacketHandler.INSTANCE.sendTo(
-                                new PacketSyncSkillData(data.serializeNBT()),
-                                player);
+                        data.addSkillPoints(1);
+
+                        PacketHandler.INSTANCE.send(
+                                PacketDistributor.PLAYER.with(() -> player),
+                                new PacketSyncSkillData(data.serializeNBT()));
                     }
                 });
             }
