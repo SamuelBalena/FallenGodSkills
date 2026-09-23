@@ -1,6 +1,8 @@
 package com.fallengods.skills;
 
 import com.fallengods.skills.network.PacketHandler;
+import com.fallengods.skills.skill.SkillRegistry;
+
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -16,6 +18,9 @@ public class FallenGodsSkills {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
-        event.enqueueWork(PacketHandler::register);
+        event.enqueueWork(() -> {
+            PacketHandler.register();
+            SkillRegistry.init();
+        });
     }
 }
