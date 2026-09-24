@@ -1,8 +1,9 @@
 package com.fallengods.skills.network;
 
 import com.fallengods.skills.capability.SkillDataCapability;
-import com.fallengods.skills.skill.Skill;
+import com.fallengods.skills.skill.SkillNode;
 import com.fallengods.skills.skill.SkillRegistry;
+import com.fallengods.skills.skill.SkillTree;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -33,21 +34,35 @@ public class PacketUnlockSkill {
                 return;
 
             player.getCapability(SkillDataCapability.PLAYER_SKILL_DATA).ifPresent(data -> {
-                Skill skill = SkillRegistry.getSkill(data.getPlayerClass(), msg.skillId);
-                if (skill == null)
+                SkillTree tree = SkillRegistry.getTree(data.getPlayerClass());
+                if (tree == null)
+                    return;
+
+                SkillNode node = tree.getNode(msg.skillId);
+                if (node == null)
                     return;
                 if (data.hasSkill(msg.skillId))
                     return;
-                if (data.getSkillPoints() < skill.getCost()) {
+
+                // Checa pré-requisitos no servidor
+                for (String pre : node.getPrerequisites()) {
+                    if (!data.hasSkill(pre)) {
+                        player.sendSystemMessage(Component.literal(
+                                "§cPré-requisito faltando: §f" + pre));
+                        return;
+                    }
+                }
+
+                if (data.getSkillPoints() < node.getCost()) {
                     player.sendSystemMessage(Component.literal("§cPontos insuficientes."));
                     return;
                 }
 
-                data.setSkillPoints(data.getSkillPoints() - skill.getCost());
+                data.setSkillPoints(data.getSkillPoints() - node.getCost());
                 data.unlockSkill(msg.skillId);
 
                 player.sendSystemMessage(Component.literal(
-                        "§aSkill desbloqueada: §f" + skill.getDisplayName()));
+                        "§aSkill desbloqueada: §f" + node.getDisplayName()));
 
                 PacketHandler.INSTANCE.send(
                         PacketDistributor.PLAYER.with(() -> player),

@@ -4,7 +4,7 @@ import com.fallengods.skills.capability.SkillDataCapability;
 import com.fallengods.skills.classsystem.ClassType;
 import com.fallengods.skills.network.PacketHandler;
 import com.fallengods.skills.network.PacketSyncSkillData;
-import com.fallengods.skills.skill.Skill;
+import com.fallengods.skills.skill.SkillNode;
 import com.fallengods.skills.skill.SkillRegistry;
 import com.fallengods.skills.skill.SkillTree;
 import com.mojang.brigadier.CommandDispatcher;
@@ -20,12 +20,9 @@ public class SkillsCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("skills")
                 .requires(source -> source.hasPermission(0))
-                // /skills
                 .executes(ctx -> showInfo(ctx.getSource()))
-                // /skills list
                 .then(Commands.literal("list")
                         .executes(ctx -> listSkills(ctx.getSource())))
-                // /skills unlock <id>
                 .then(Commands.literal("unlock")
                         .then(Commands.argument("skillId", StringArgumentType.string())
                                 .executes(ctx -> unlockSkill(
@@ -46,7 +43,7 @@ public class SkillsCommand {
             source.sendSuccess(() -> Component.literal(
                     "§ePontos de habilidade: §f" + data.getSkillPoints()), false);
             source.sendSuccess(() -> Component.literal(
-                    "§7Use §f/skills list §7para ver as skills da sua classe."), false);
+                    "§7Use §f/skills list §7para ver a árvore da sua classe."), false);
         });
         return 1;
     }
@@ -73,16 +70,39 @@ public class SkillsCommand {
             source.sendSuccess(() -> Component.literal(
                     "§6=== Árvore: " + classType.getDisplayName() + " ==="), false);
 
-            for (Skill skill : tree.getSkills()) {
-                boolean unlocked = data.hasSkill(skill.getId());
-                String mark = unlocked ? "§a✔" : "§c✘";
+            for (SkillNode node : tree.getNodes()) {
+                boolean unlocked = data.hasSkill(node.getId());
+                boolean available = canUnlock(data, tree, node);
+
+                String mark;
+                if (unlocked)
+                    mark = "§a✔";
+                else if (available)
+                    mark = "§e○";
+                else
+                    mark = "§c✘";
+
+                String branch = "§8[" + node.getBranch().getDisplayName().substring(0, 3) + "]";
+                String type = node.getType().name().equals("ATIVA") ? "§d★" : "§7•";
+
                 source.sendSuccess(() -> Component.literal(
-                        mark + " §f" + skill.getId() + " §7(" + skill.getDisplayName() + ") §e- "
-                                + skill.getCost() + " ponto(s) §7- " + skill.getDescription()),
+                        mark + " " + branch + " " + type + " §f" + node.getId() + " §7- "
+                                + node.getDisplayName() + " §8(" + node.getDescription() + ")"),
                         false);
             }
         });
         return 1;
+    }
+
+    private static boolean canUnlock(com.fallengods.skills.capability.PlayerSkillData data,
+            SkillTree tree, SkillNode node) {
+        if (data.hasSkill(node.getId()))
+            return false;
+        for (String pre : node.getPrerequisites()) {
+            if (!data.hasSkill(pre))
+                return false;
+        }
+        return true;
     }
 
     private static int unlockSkill(CommandSourceStack source, String skillId) {
@@ -98,9 +118,13 @@ public class SkillsCommand {
                 return;
             }
 
-            Skill skill = SkillRegistry.getSkill(classType, skillId);
-            if (skill == null) {
-                source.sendFailure(Component.literal("Skill não encontrada: " + skillId));
+            SkillTree tree = SkillRegistry.getTree(classType);
+            if (tree == null)
+                return;
+
+            SkillNode node = tree.getNode(skillId);
+            if (node == null) {
+                source.sendFailure(Component.literal("Nó não encontrado: " + skillId));
                 return;
             }
 
@@ -109,22 +133,30 @@ public class SkillsCommand {
                 return;
             }
 
-            if (data.getSkillPoints() < skill.getCost()) {
+            // Checa pré-requisitos
+            for (String pre : node.getPrerequisites()) {
+                if (!data.hasSkill(pre)) {
+                    source.sendFailure(Component.literal(
+                            "§cPré-requisito faltando: §f" + pre));
+                    return;
+                }
+            }
+
+            if (data.getSkillPoints() < node.getCost()) {
                 source.sendFailure(Component.literal(
-                        "Pontos insuficientes. Precisa de " + skill.getCost()
+                        "Pontos insuficientes. Precisa de " + node.getCost()
                                 + ", você tem " + data.getSkillPoints() + "."));
                 return;
             }
 
-            data.setSkillPoints(data.getSkillPoints() - skill.getCost());
+            data.setSkillPoints(data.getSkillPoints() - node.getCost());
             data.unlockSkill(skillId);
 
             source.sendSuccess(() -> Component.literal(
-                    "§aSkill desbloqueada: §f" + skill.getDisplayName()
-                            + " §7(-" + skill.getCost() + " pontos)"),
+                    "§aSkill desbloqueada: §f" + node.getDisplayName()
+                            + " §7(-" + node.getCost() + " ponto)"),
                     false);
 
-            // Sincroniza cliente
             PacketHandler.INSTANCE.send(
                     PacketDistributor.PLAYER.with(() -> player),
                     new PacketSyncSkillData(data.serializeNBT()));
