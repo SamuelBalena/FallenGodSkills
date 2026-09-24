@@ -31,7 +31,7 @@ public class StatBonus {
     }
 
     public static StatBonus knockbackResist(double v) {
-        return of(StatType.KNOCKBACK_RESIST, v);
+        return of(StatType.KNOCKBACK_RESISTANCE, v);
     }
 
     public static StatBonus damageReduction(double v) {

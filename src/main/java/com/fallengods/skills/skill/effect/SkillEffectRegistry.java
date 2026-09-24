@@ -1,9 +1,6 @@
 package com.fallengods.skills.skill.effect;
 
 import com.fallengods.skills.classsystem.ClassType;
-import com.fallengods.skills.skill.SkillNode;
-import com.fallengods.skills.skill.SkillRegistry;
-import com.fallengods.skills.skill.SkillTree;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,36 +63,42 @@ public class SkillEffectRegistry {
 
         add("guerreiro_def_25", StatBonus.health(1));
         add("guerreiro_def_26", StatBonus.damageReduction(0.03));
+        // guerreiro_def_27 (Couraça Viva) -> efeito dinâmico, vai pra 5.4
 
         add("guerreiro_def_28", StatBonus.armor(1));
         add("guerreiro_def_29", StatBonus.knockbackResist(0.05));
         add("guerreiro_def_30", StatBonus.health(1));
         add("guerreiro_def_31", StatBonus.armor(1));
 
+        // guerreiro_def_32 (Muralha Humana) -> efeito dinâmico, vai pra 5.4
         add("guerreiro_def_33", StatBonus.health(1));
         add("guerreiro_def_34", StatBonus.damageReduction(0.03));
     }
 
     // =====================================================================
-    // Passivas base
+    // Passivas base — aplicadas automaticamente ao escolher a classe
     // =====================================================================
     private static void registerClassBase() {
+        // Guerreiro: +20% dano com Espadas e Machados, +10% resistência a knockback
         List<StatBonus> guerreiro = new ArrayList<>();
         guerreiro.add(StatBonus.of(StatType.DAMAGE_SWORD, 0.20));
         guerreiro.add(StatBonus.of(StatType.DAMAGE_AXE, 0.20));
-        guerreiro.add(StatBonus.of(StatType.KNOCKBACK_RESIST, 0.10));
+        guerreiro.add(StatBonus.of(StatType.KNOCKBACK_RESISTANCE, 0.10));
         CLASS_BASE.put(ClassType.GUERREIRO, guerreiro);
 
+        // Arqueiro: +20% dano com Arcos, +10% velocidade de movimento
         List<StatBonus> arqueiro = new ArrayList<>();
         arqueiro.add(StatBonus.of(StatType.DAMAGE_BOW, 0.20));
         arqueiro.add(StatBonus.of(StatType.MOVEMENT_SPEED, 0.10));
         CLASS_BASE.put(ClassType.ARQUEIRO, arqueiro);
 
+        // Mago: +20% dano mágico, +15% redução de cooldown
         List<StatBonus> mago = new ArrayList<>();
         mago.add(StatBonus.of(StatType.DAMAGE_MAGIC, 0.20));
         mago.add(StatBonus.of(StatType.COOLDOWN_REDUCTION, 0.15));
         CLASS_BASE.put(ClassType.MAGO, mago);
 
+        // Sacerdote: +20% poder de cura, +2 corações
         List<StatBonus> sacerdote = new ArrayList<>();
         sacerdote.add(StatBonus.of(StatType.HEAL_POWER, 0.20));
         sacerdote.add(StatBonus.health(4));

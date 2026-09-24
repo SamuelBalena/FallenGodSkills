@@ -14,6 +14,9 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.network.PacketDistributor;
 
 public class SkillsCommand {
@@ -26,6 +29,8 @@ public class SkillsCommand {
                         .executes(ctx -> listSkills(ctx.getSource())))
                 .then(Commands.literal("stats")
                         .executes(ctx -> showStats(ctx.getSource())))
+                .then(Commands.literal("attr")
+                        .executes(ctx -> showAttributes(ctx.getSource())))
                 .then(Commands.literal("unlock")
                         .then(Commands.argument("skillId", StringArgumentType.string())
                                 .executes(ctx -> unlockSkill(
@@ -127,6 +132,44 @@ public class SkillsCommand {
     }
 
     // =====================================================================
+    // /skills attr — mostra os valores REAIS dos atributos do jogador
+    // =====================================================================
+    private static int showAttributes(CommandSourceStack source) {
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("Este comando só pode ser usado por jogadores."));
+            return 0;
+        }
+
+        source.sendSuccess(() -> Component.literal("§6=== Atributos Reais ==="), false);
+
+        printAttr(source, player, "Armadura", Attributes.ARMOR);
+        printAttr(source, player, "Toughness de Armadura", Attributes.ARMOR_TOUGHNESS);
+        printAttr(source, player, "Vida Maxima", Attributes.MAX_HEALTH);
+        printAttr(source, player, "Dano de Ataque", Attributes.ATTACK_DAMAGE);
+        printAttr(source, player, "Velocidade de Ataque", Attributes.ATTACK_SPEED);
+        printAttr(source, player, "Velocidade de Movimento", Attributes.MOVEMENT_SPEED);
+        printAttr(source, player, "Resistencia a Knockback", Attributes.KNOCKBACK_RESISTANCE);
+
+        return 1;
+    }
+
+    private static void printAttr(CommandSourceStack source, ServerPlayer player,
+            String label, Attribute attr) {
+        AttributeInstance inst = player.getAttribute(attr);
+        if (inst == null) {
+            source.sendSuccess(() -> Component.literal(
+                    "§7" + label + "§f: §c(nao aplicavel)"), false);
+            return;
+        }
+        double base = inst.getBaseValue();
+        double total = inst.getValue();
+        source.sendSuccess(() -> Component.literal(
+                "§7" + label + "§f: §a" + String.format("%.2f", total)
+                        + " §7(base " + String.format("%.2f", base) + ")"),
+                false);
+    }
+
+    // =====================================================================
     // /skills unlock <id>
     // =====================================================================
     private static int unlockSkill(CommandSourceStack source, String skillId) {
@@ -175,7 +218,6 @@ public class SkillsCommand {
             data.setSkillPoints(data.getSkillPoints() - node.getCost());
             data.unlockSkill(skillId);
 
-            // Recalcula bônus
             data.setAccumulatedBonuses(
                     com.fallengods.skills.skill.effect.SkillEffectRegistry.recalcBonuses(
                             data.getPlayerClass(),

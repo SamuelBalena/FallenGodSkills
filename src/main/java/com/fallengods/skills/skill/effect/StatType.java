@@ -2,16 +2,7 @@ package com.fallengods.skills.skill.effect;
 
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraftforge.registries.RegistryObject;
 
-/**
- * Tipos de bônus que o mod sabe acumular.
- *
- * Cada StatType tem:
- * - um id curto (ex: "armor")
- * - uma flag indicando se é vanilla (Attribute) ou do mod (custom)
- * - um atributo vanilla associado, quando aplicável
- */
 public enum StatType {
 
     // ===== Atributos vanilla =====
@@ -33,8 +24,7 @@ public enum StatType {
     HEAL_POWER("heal_power", null),
     COOLDOWN_REDUCTION("cooldown_reduction", null),
     CRIT_CHANCE("crit_chance", null),
-    CRIT_DAMAGE("crit_damage", null),
-    KNOCKBACK_RESIST("knockback_resist", null);
+    CRIT_DAMAGE("crit_damage", null);
 
     private final String id;
     private final Attribute vanillaAttribute;
