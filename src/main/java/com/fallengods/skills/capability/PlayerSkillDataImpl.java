@@ -1,10 +1,12 @@
 package com.fallengods.skills.capability;
 
 import com.fallengods.skills.classsystem.ClassType;
+import com.fallengods.skills.skill.effect.StatType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -13,9 +15,9 @@ import java.util.Set;
 public class PlayerSkillDataImpl implements PlayerSkillData {
     private ClassType playerClass = ClassType.NONE;
     private int skillPoints = 0;
-    private int lastKnownLevel = -1;
     private final Set<String> unlockedSkills = new HashSet<>();
     private final Map<String, Long> cooldowns = new HashMap<>();
+    private final Map<StatType, Double> accumulatedBonuses = new EnumMap<>(StatType.class);
 
     @Override
     public ClassType getPlayerClass() {
@@ -53,6 +55,11 @@ public class PlayerSkillDataImpl implements PlayerSkillData {
     }
 
     @Override
+    public Set<String> getUnlockedSkillsSet() {
+        return unlockedSkills;
+    }
+
+    @Override
     public Map<String, Long> getCooldowns() {
         return cooldowns;
     }
@@ -68,13 +75,19 @@ public class PlayerSkillDataImpl implements PlayerSkillData {
     }
 
     @Override
-    public int getLastKnownLevel() {
-        return lastKnownLevel;
+    public Map<StatType, Double> getAccumulatedBonuses() {
+        return accumulatedBonuses;
     }
 
     @Override
-    public void setLastKnownLevel(int level) {
-        this.lastKnownLevel = level;
+    public double getBonus(StatType type) {
+        return accumulatedBonuses.getOrDefault(type, 0.0);
+    }
+
+    @Override
+    public void setAccumulatedBonuses(Map<StatType, Double> bonuses) {
+        accumulatedBonuses.clear();
+        accumulatedBonuses.putAll(bonuses);
     }
 
     @Override
@@ -82,7 +95,6 @@ public class PlayerSkillDataImpl implements PlayerSkillData {
         CompoundTag nbt = new CompoundTag();
         nbt.putString("PlayerClass", playerClass.name());
         nbt.putInt("SkillPoints", skillPoints);
-        nbt.putInt("LastKnownLevel", lastKnownLevel);
 
         ListTag skillList = new ListTag();
         for (String skill : unlockedSkills)
@@ -95,6 +107,8 @@ public class PlayerSkillDataImpl implements PlayerSkillData {
         }
         nbt.put("Cooldowns", cdTag);
 
+        // accumulatedBonuses NÃO é persistido — é recalculado no login.
+
         return nbt;
     }
 
@@ -102,7 +116,6 @@ public class PlayerSkillDataImpl implements PlayerSkillData {
     public void deserializeNBT(CompoundTag nbt) {
         playerClass = ClassType.valueOf(nbt.getString("PlayerClass"));
         skillPoints = nbt.getInt("SkillPoints");
-        lastKnownLevel = nbt.contains("LastKnownLevel") ? nbt.getInt("LastKnownLevel") : -1;
 
         unlockedSkills.clear();
         ListTag skillList = nbt.getList("UnlockedSkills", 8);
@@ -114,5 +127,7 @@ public class PlayerSkillDataImpl implements PlayerSkillData {
         for (String key : cdTag.getAllKeys()) {
             cooldowns.put(key, cdTag.getLong(key));
         }
+
+        accumulatedBonuses.clear();
     }
 }

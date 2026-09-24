@@ -7,12 +7,16 @@ import com.fallengods.skills.command.SkillsCommand;
 import com.fallengods.skills.network.PacketHandler;
 import com.fallengods.skills.network.PacketOpenClassScreen;
 import com.fallengods.skills.network.PacketSyncSkillData;
+import com.fallengods.skills.skill.effect.SkillEffectRegistry;
+import com.fallengods.skills.skill.effect.StatType;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
+
+import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = FallenGodsSkills.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CommonEvents {
@@ -23,11 +27,10 @@ public class CommonEvents {
             return;
 
         player.getCapability(SkillDataCapability.PLAYER_SKILL_DATA).ifPresent(data -> {
-            // Inicializa o "last known level" com o nível real do jogador
-            // (evita dar pontos por XP acumulado antes do mod estar ativo)
-            if (data.getLastKnownLevel() == -1) {
-                data.setLastKnownLevel(player.experienceLevel);
-            }
+            Map<StatType, Double> bonuses = SkillEffectRegistry.recalcBonuses(
+                    data.getPlayerClass(),
+                    data.getUnlockedSkillsSet());
+            data.setAccumulatedBonuses(bonuses);
 
             PacketHandler.INSTANCE.send(
                     PacketDistributor.PLAYER.with(() -> player),

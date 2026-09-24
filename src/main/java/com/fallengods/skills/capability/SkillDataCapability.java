@@ -1,6 +1,7 @@
 package com.fallengods.skills.capability;
 
 import com.fallengods.skills.FallenGodsSkills;
+import com.fallengods.skills.skill.effect.SkillEffectRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -15,6 +16,7 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = FallenGodsSkills.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class SkillDataCapability {
+
     public static final Capability<PlayerSkillData> PLAYER_SKILL_DATA = CapabilityManager.get(new CapabilityToken<>() {
     });
 
@@ -33,15 +35,24 @@ public class SkillDataCapability {
     @SubscribeEvent
     public static void onClone(PlayerEvent.Clone event) {
         event.getOriginal().reviveCaps();
+
         event.getOriginal().getCapability(PLAYER_SKILL_DATA).ifPresent(oldData -> {
             event.getEntity().getCapability(PLAYER_SKILL_DATA).ifPresent(newData -> {
                 newData.deserializeNBT(oldData.serializeNBT());
+
+                // Recalcula bônus após copiar os dados (o accumulatedBonuses
+                // não é persistido, então precisa ser recalculado).
+                newData.setAccumulatedBonuses(
+                        SkillEffectRegistry.recalcBonuses(
+                                newData.getPlayerClass(),
+                                newData.getUnlockedSkillsSet()));
             });
         });
+
         event.getOriginal().invalidateCaps();
     }
 
-    // Registro da capability — precisa ficar no MOD bus
+    // ===== Registro da capability — precisa ficar no MOD bus =====
     @Mod.EventBusSubscriber(modid = FallenGodsSkills.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
     public static class ModBusEvents {
         @SubscribeEvent

@@ -1,5 +1,6 @@
 package com.fallengods.skills.command;
 
+import com.fallengods.skills.capability.PlayerSkillData;
 import com.fallengods.skills.capability.SkillDataCapability;
 import com.fallengods.skills.classsystem.ClassType;
 import com.fallengods.skills.network.PacketHandler;
@@ -23,6 +24,8 @@ public class SkillsCommand {
                 .executes(ctx -> showInfo(ctx.getSource()))
                 .then(Commands.literal("list")
                         .executes(ctx -> listSkills(ctx.getSource())))
+                .then(Commands.literal("stats")
+                        .executes(ctx -> showStats(ctx.getSource())))
                 .then(Commands.literal("unlock")
                         .then(Commands.argument("skillId", StringArgumentType.string())
                                 .executes(ctx -> unlockSkill(
@@ -30,6 +33,9 @@ public class SkillsCommand {
                                         StringArgumentType.getString(ctx, "skillId"))))));
     }
 
+    // =====================================================================
+    // /skills
+    // =====================================================================
     private static int showInfo(CommandSourceStack source) {
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("Este comando só pode ser usado por jogadores."));
@@ -43,11 +49,14 @@ public class SkillsCommand {
             source.sendSuccess(() -> Component.literal(
                     "§ePontos de habilidade: §f" + data.getSkillPoints()), false);
             source.sendSuccess(() -> Component.literal(
-                    "§7Use §f/skills list §7para ver a árvore da sua classe."), false);
+                    "§7Use §f/skills list §7para ver a árvore."), false);
         });
         return 1;
     }
 
+    // =====================================================================
+    // /skills list
+    // =====================================================================
     private static int listSkills(CommandSourceStack source) {
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("Este comando só pode ser usado por jogadores."));
@@ -72,7 +81,7 @@ public class SkillsCommand {
 
             for (SkillNode node : tree.getNodes()) {
                 boolean unlocked = data.hasSkill(node.getId());
-                boolean available = canUnlock(data, tree, node);
+                boolean available = canUnlock(data, node);
 
                 String mark;
                 if (unlocked)
@@ -94,17 +103,32 @@ public class SkillsCommand {
         return 1;
     }
 
-    private static boolean canUnlock(com.fallengods.skills.capability.PlayerSkillData data,
-            SkillTree tree, SkillNode node) {
-        if (data.hasSkill(node.getId()))
-            return false;
-        for (String pre : node.getPrerequisites()) {
-            if (!data.hasSkill(pre))
-                return false;
+    // =====================================================================
+    // /skills stats
+    // =====================================================================
+    private static int showStats(CommandSourceStack source) {
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("Este comando só pode ser usado por jogadores."));
+            return 0;
         }
-        return true;
+
+        player.getCapability(SkillDataCapability.PLAYER_SKILL_DATA).ifPresent(data -> {
+            source.sendSuccess(() -> Component.literal("§6=== Bônus Acumulados ==="), false);
+
+            if (data.getAccumulatedBonuses().isEmpty()) {
+                source.sendSuccess(() -> Component.literal("§7(nenhum bônus ainda)"), false);
+                return;
+            }
+
+            data.getAccumulatedBonuses().forEach((type, value) -> source.sendSuccess(() -> Component.literal(
+                    "§e" + type.getId() + "§7: §f" + String.format("%.2f", value)), false));
+        });
+        return 1;
     }
 
+    // =====================================================================
+    // /skills unlock <id>
+    // =====================================================================
     private static int unlockSkill(CommandSourceStack source, String skillId) {
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("Este comando só pode ser usado por jogadores."));
@@ -133,7 +157,6 @@ public class SkillsCommand {
                 return;
             }
 
-            // Checa pré-requisitos
             for (String pre : node.getPrerequisites()) {
                 if (!data.hasSkill(pre)) {
                     source.sendFailure(Component.literal(
@@ -152,6 +175,12 @@ public class SkillsCommand {
             data.setSkillPoints(data.getSkillPoints() - node.getCost());
             data.unlockSkill(skillId);
 
+            // Recalcula bônus
+            data.setAccumulatedBonuses(
+                    com.fallengods.skills.skill.effect.SkillEffectRegistry.recalcBonuses(
+                            data.getPlayerClass(),
+                            data.getUnlockedSkillsSet()));
+
             source.sendSuccess(() -> Component.literal(
                     "§aSkill desbloqueada: §f" + node.getDisplayName()
                             + " §7(-" + node.getCost() + " ponto)"),
@@ -162,5 +191,18 @@ public class SkillsCommand {
                     new PacketSyncSkillData(data.serializeNBT()));
         });
         return 1;
+    }
+
+    // =====================================================================
+    // Helper
+    // =====================================================================
+    private static boolean canUnlock(PlayerSkillData data, SkillNode node) {
+        if (data.hasSkill(node.getId()))
+            return false;
+        for (String pre : node.getPrerequisites()) {
+            if (!data.hasSkill(pre))
+                return false;
+        }
+        return true;
     }
 }

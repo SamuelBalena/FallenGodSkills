@@ -1,9 +1,11 @@
 package com.fallengods.skills.capability;
 
 import com.fallengods.skills.classsystem.ClassType;
+import com.fallengods.skills.skill.effect.StatType;
 import net.minecraft.nbt.CompoundTag;
 
 import java.util.Map;
+import java.util.Set;
 
 public interface PlayerSkillData {
     ClassType getPlayerClass();
@@ -20,16 +22,20 @@ public interface PlayerSkillData {
 
     void unlockSkill(String skillId);
 
+    Set<String> getUnlockedSkillsSet();
+
     Map<String, Long> getCooldowns();
 
     long getCooldownEnd(String skillId);
 
     void setCooldownEnd(String skillId, long timestamp);
 
-    // ===== Nível de XP (pra calcular pontos ganhos no level up) =====
-    int getLastKnownLevel();
+    // ===== Bônus acumulados (recalculados quando muda algo) =====
+    Map<StatType, Double> getAccumulatedBonuses();
 
-    void setLastKnownLevel(int level);
+    double getBonus(StatType type);
+
+    void setAccumulatedBonuses(Map<StatType, Double> bonuses);
 
     CompoundTag serializeNBT();
 

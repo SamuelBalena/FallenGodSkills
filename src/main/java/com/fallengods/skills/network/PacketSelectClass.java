@@ -2,6 +2,7 @@ package com.fallengods.skills.network;
 
 import com.fallengods.skills.capability.SkillDataCapability;
 import com.fallengods.skills.classsystem.ClassType;
+import com.fallengods.skills.skill.effect.SkillEffectRegistry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
@@ -32,6 +33,12 @@ public class PacketSelectClass {
                     if (data.getPlayerClass() == ClassType.NONE) {
                         data.setPlayerClass(msg.classType);
                         data.addSkillPoints(1);
+
+                        // ===== CORREÇÃO: recalcular bônus após definir a classe =====
+                        data.setAccumulatedBonuses(
+                                SkillEffectRegistry.recalcBonuses(
+                                        data.getPlayerClass(),
+                                        data.getUnlockedSkillsSet()));
 
                         PacketHandler.INSTANCE.send(
                                 PacketDistributor.PLAYER.with(() -> player),
