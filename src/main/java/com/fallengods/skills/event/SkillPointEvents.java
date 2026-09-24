@@ -2,13 +2,12 @@ package com.fallengods.skills.event;
 
 import com.fallengods.skills.FallenGodsSkills;
 import com.fallengods.skills.capability.SkillDataCapability;
+import com.fallengods.skills.classsystem.ClassType;
 import com.fallengods.skills.network.PacketHandler;
 import com.fallengods.skills.network.PacketSyncSkillData;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.monster.Enemy;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.player.PlayerXpEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
@@ -16,28 +15,37 @@ import net.minecraftforge.network.PacketDistributor;
 @Mod.EventBusSubscriber(modid = FallenGodsSkills.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class SkillPointEvents {
 
+    /**
+     * Ganha pontos ao subir de nível de XP (vanilla).
+     *
+     * PlayerXpEvent.LevelChange dispara ANTES do nível mudar.
+     * getLevels() retorna a quantidade de níveis sendo adicionados (ou removidos).
+     */
     @SubscribeEvent
-    public static void onMobKilled(LivingDeathEvent event) {
-        if (!(event.getEntity() instanceof Mob mob))
+    public static void onLevelChange(PlayerXpEvent.LevelChange event) {
+        if (!(event.getEntity() instanceof ServerPlayer player))
             return;
-        if (!(mob instanceof Enemy))
+        if (player.level().isClientSide())
             return;
-        if (mob.level().isClientSide())
-            return;
-        if (!(mob.getKillCredit() instanceof ServerPlayer player))
+
+        int levelsChanged = event.getLevels();
+
+        // Só ganha ponto se está SUBINDO de nível
+        if (levelsChanged <= 0)
             return;
 
         player.getCapability(SkillDataCapability.PLAYER_SKILL_DATA).ifPresent(data -> {
-            if (data.getPlayerClass().name().equals("NONE"))
+            // Só dá pontos se o jogador já escolheu uma classe
+            if (data.getPlayerClass() == ClassType.NONE)
                 return;
 
-            data.addSkillPoints(1);
+            data.addSkillPoints(levelsChanged);
 
-            // Mensagem no chat
             player.sendSystemMessage(Component.literal(
-                    "§a+1 Ponto de Habilidade §7(Total: " + data.getSkillPoints() + ")"));
+                    "§a+" + levelsChanged + " Ponto" + (levelsChanged > 1 ? "s" : "")
+                            + " de Habilidade §7(Total: " + data.getSkillPoints() + ")"));
 
-            // Sincroniza com o cliente
+            // Sincroniza cliente
             PacketHandler.INSTANCE.send(
                     PacketDistributor.PLAYER.with(() -> player),
                     new PacketSyncSkillData(data.serializeNBT()));

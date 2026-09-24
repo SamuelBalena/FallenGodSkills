@@ -20,12 +20,16 @@ public interface PlayerSkillData {
 
     void unlockSkill(String skillId);
 
-    // ===== Cooldowns (skillId -> timestamp do próximo uso permitido, em ms) =====
     Map<String, Long> getCooldowns();
 
     long getCooldownEnd(String skillId);
 
     void setCooldownEnd(String skillId, long timestamp);
+
+    // ===== Nível de XP (pra calcular pontos ganhos no level up) =====
+    int getLastKnownLevel();
+
+    void setLastKnownLevel(int level);
 
     CompoundTag serializeNBT();
 

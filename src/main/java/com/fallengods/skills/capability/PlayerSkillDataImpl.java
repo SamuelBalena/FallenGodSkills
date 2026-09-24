@@ -13,6 +13,7 @@ import java.util.Set;
 public class PlayerSkillDataImpl implements PlayerSkillData {
     private ClassType playerClass = ClassType.NONE;
     private int skillPoints = 0;
+    private int lastKnownLevel = -1;
     private final Set<String> unlockedSkills = new HashSet<>();
     private final Map<String, Long> cooldowns = new HashMap<>();
 
@@ -67,10 +68,21 @@ public class PlayerSkillDataImpl implements PlayerSkillData {
     }
 
     @Override
+    public int getLastKnownLevel() {
+        return lastKnownLevel;
+    }
+
+    @Override
+    public void setLastKnownLevel(int level) {
+        this.lastKnownLevel = level;
+    }
+
+    @Override
     public CompoundTag serializeNBT() {
         CompoundTag nbt = new CompoundTag();
         nbt.putString("PlayerClass", playerClass.name());
         nbt.putInt("SkillPoints", skillPoints);
+        nbt.putInt("LastKnownLevel", lastKnownLevel);
 
         ListTag skillList = new ListTag();
         for (String skill : unlockedSkills)
@@ -90,6 +102,7 @@ public class PlayerSkillDataImpl implements PlayerSkillData {
     public void deserializeNBT(CompoundTag nbt) {
         playerClass = ClassType.valueOf(nbt.getString("PlayerClass"));
         skillPoints = nbt.getInt("SkillPoints");
+        lastKnownLevel = nbt.contains("LastKnownLevel") ? nbt.getInt("LastKnownLevel") : -1;
 
         unlockedSkills.clear();
         ListTag skillList = nbt.getList("UnlockedSkills", 8);

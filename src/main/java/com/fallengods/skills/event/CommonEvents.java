@@ -23,6 +23,12 @@ public class CommonEvents {
             return;
 
         player.getCapability(SkillDataCapability.PLAYER_SKILL_DATA).ifPresent(data -> {
+            // Inicializa o "last known level" com o nível real do jogador
+            // (evita dar pontos por XP acumulado antes do mod estar ativo)
+            if (data.getLastKnownLevel() == -1) {
+                data.setLastKnownLevel(player.experienceLevel);
+            }
+
             PacketHandler.INSTANCE.send(
                     PacketDistributor.PLAYER.with(() -> player),
                     new PacketSyncSkillData(data.serializeNBT()));
