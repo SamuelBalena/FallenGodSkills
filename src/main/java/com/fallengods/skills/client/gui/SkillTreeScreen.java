@@ -11,23 +11,30 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class SkillTreeScreen extends Screen {
 
     // ===== Constantes de layout =====
-    private static final int CELL_SIZE = 24; // pixels por unidade de grid
-    private static final int NODE_RADIUS = 8; // raio do círculo
+    private static final int CELL_SIZE = 24;
+    private static final int NODE_RADIUS = 8;
     private static final float ZOOM_MIN = 0.5f;
     private static final float ZOOM_MAX = 2.0f;
     private static final float ZOOM_STEP = 0.1f;
-    private static final float PAN_SPEED = 8.0f; // pixels por frame quando Shift+WASD
+    private static final float PAN_SPEED = 8.0f;
 
     // ===== Estado da câmera =====
-    private float cameraX = 0f; // posição do "centro da tela" em coordenadas de grid
+    private float cameraX = 0f;
     private float cameraY = 0f;
     private float zoom = 1.0f;
 
-    // ===== Estado de input =====
+    // ===== Input =====
     private boolean isPanning = false;
+
+    // ===== Seleção =====
+    private SkillNode selectedNode = null;
+    private Button learnButton = null;
 
     public SkillTreeScreen() {
         super(Component.literal("Árvore de Habilidades"));
@@ -41,7 +48,6 @@ public class SkillTreeScreen extends Screen {
             return;
         }
 
-        // Centraliza a câmera no nó central da classe
         SkillTree tree = SkillRegistry.getTree(classType);
         if (tree != null) {
             SkillNode central = findCentral(tree);
@@ -49,16 +55,22 @@ public class SkillTreeScreen extends Screen {
                 cameraX = central.getGridX();
                 cameraY = central.getGridY();
             }
-        } else {
-            cameraX = 0;
-            cameraY = 0;
         }
         zoom = 1.0f;
+        selectedNode = null;
 
         // Botão "Centralizar"
         this.addRenderableWidget(Button.builder(
                 Component.literal("Centralizar"),
                 b -> recenter()).bounds(this.width - 110, this.height - 30, 100, 20).build());
+
+        // Botão "Aprender"
+        learnButton = Button.builder(
+                Component.literal("Aprender"),
+                b -> tryLearn()).bounds(this.width / 2 - 60, this.height - 60, 120, 20).build();
+        learnButton.visible = false;
+        learnButton.active = false;
+        this.addRenderableWidget(learnButton);
     }
 
     private void recenter() {
@@ -83,13 +95,62 @@ public class SkillTreeScreen extends Screen {
     }
 
     // =====================================================================
+    // SELEÇÃO + BOTÃO
+    // =====================================================================
+    private void selectNode(SkillNode node) {
+        selectedNode = node;
+        if (learnButton != null) {
+            learnButton.visible = true;
+
+            boolean unlocked = ClientSkillData.get().hasSkill(node.getId());
+            boolean available = canUnlock(node);
+            int points = ClientSkillData.get().getSkillPoints();
+            boolean canAfford = points >= node.getCost();
+
+            if (unlocked) {
+                learnButton.setMessage(Component.literal("§7Já aprendida"));
+                learnButton.active = false;
+            } else if (!available) {
+                learnButton.setMessage(Component.literal("§cPré-requisito faltando"));
+                learnButton.active = false;
+            } else if (!canAfford) {
+                learnButton.setMessage(Component.literal("§cPontos insuficientes"));
+                learnButton.active = false;
+            } else {
+                learnButton.setMessage(Component.literal("§aAprender"));
+                learnButton.active = true;
+            }
+        }
+    }
+
+    private void clearSelection() {
+        selectedNode = null;
+        if (learnButton != null) {
+            learnButton.visible = false;
+            learnButton.active = false;
+        }
+    }
+
+    private void tryLearn() {
+        if (selectedNode == null)
+            return;
+
+        // 5.5.C vai mandar o pacote pro servidor. Por enquanto, só log.
+        if (this.minecraft != null && this.minecraft.player != null) {
+            this.minecraft.player.displayClientMessage(
+                    Component.literal("§7[Debug] Você tentou aprender: §f"
+                            + selectedNode.getDisplayName()),
+                    false);
+        }
+    }
+
+    // =====================================================================
     // INPUT — teclado
     // =====================================================================
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         boolean shift = Screen.hasShiftDown();
 
-        // Zoom com + e -
         if (keyCode == GLFW.GLFW_KEY_EQUAL || keyCode == GLFW.GLFW_KEY_KP_ADD) {
             zoom = Math.min(ZOOM_MAX, zoom + ZOOM_STEP);
             return true;
@@ -99,7 +160,6 @@ public class SkillTreeScreen extends Screen {
             return true;
         }
 
-        // Pan com Shift + WASD
         if (shift) {
             switch (keyCode) {
                 case GLFW.GLFW_KEY_W -> {
@@ -121,6 +181,11 @@ public class SkillTreeScreen extends Screen {
             }
         }
 
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE && selectedNode != null) {
+            clearSelection();
+            return true;
+        }
+
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
@@ -138,17 +203,20 @@ public class SkillTreeScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // ===== CORRIGIDO =====
-        // super.mouseClicked primeiro: se um widget (botão) consumir,
-        // ele retorna true e a gente NÃO começa o pan.
         if (super.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
 
-        // Se chegou aqui, nenhum widget pegou. Começa o pan.
         if (button == 0) {
-            isPanning = true;
-            return true;
+            SkillNode clicked = getNodeAt(mouseX, mouseY);
+            if (clicked != null) {
+                selectNode(clicked);
+                return true;
+            } else {
+                clearSelection();
+                isPanning = true;
+                return true;
+            }
         }
         return false;
     }
@@ -165,7 +233,6 @@ public class SkillTreeScreen extends Screen {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         if (isPanning && button == 0) {
-            // Converte o delta de pixels pra coordenadas de grid
             float scale = CELL_SIZE * zoom;
             cameraX -= (float) (dragX / scale);
             cameraY -= (float) (dragY / scale);
@@ -175,11 +242,35 @@ public class SkillTreeScreen extends Screen {
     }
 
     // =====================================================================
+    // HIT DETECTION
+    // =====================================================================
+    private SkillNode getNodeAt(double mouseX, double mouseY) {
+        ClassType classType = ClientSkillData.get().getPlayerClass();
+        SkillTree tree = SkillRegistry.getTree(classType);
+        if (tree == null)
+            return null;
+
+        List<SkillNode> nodes = tree.getNodes();
+        for (int i = nodes.size() - 1; i >= 0; i--) {
+            SkillNode n = nodes.get(i);
+            float sx = gridToScreenX(n.getGridX());
+            float sy = gridToScreenY(n.getGridY());
+            int radius = n.isCentral() ? NODE_RADIUS + 3 : NODE_RADIUS;
+
+            double dx = mouseX - sx;
+            double dy = mouseY - sy;
+            if (dx * dx + dy * dy <= radius * radius) {
+                return n;
+            }
+        }
+        return null;
+    }
+
+    // =====================================================================
     // RENDER
     // =====================================================================
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // Fundo escuro
         this.renderBackground(graphics);
 
         ClassType classType = ClientSkillData.get().getPlayerClass();
@@ -189,17 +280,79 @@ public class SkillTreeScreen extends Screen {
             return;
         }
 
-        // ===== Renderiza os nós =====
+        // 1. Linhas de conexão
         for (SkillNode node : tree.getNodes()) {
-            drawNode(graphics, node);
+            for (String preId : node.getPrerequisites()) {
+                SkillNode pre = tree.getNode(preId);
+                if (pre == null)
+                    continue;
+                drawConnection(graphics, pre, node);
+            }
         }
 
-        // ===== HUD fixa (não é afetada por pan/zoom) =====
+        // 2. Nós
+        SkillNode hovered = getNodeAt(mouseX, mouseY);
+        for (SkillNode node : tree.getNodes()) {
+            boolean isSelected = (node == selectedNode);
+            boolean isHovered = (node == hovered);
+            drawNode(graphics, node, isSelected, isHovered);
+        }
+
+        // 3. HUD fixa
         drawHeader(graphics);
         drawLegend(graphics);
+        drawSelectedPanel(graphics);
 
-        // ===== Widgets (botões) por cima =====
+        // 4. Widgets (botões)
         super.render(graphics, mouseX, mouseY, partialTick);
+
+        // 5. Tooltip POR ÚLTIMO (fica em cima de tudo)
+        if (hovered != null) {
+            drawTooltip(graphics, hovered, mouseX, mouseY);
+        }
+    }
+
+    private void drawConnection(GuiGraphics graphics, SkillNode from, SkillNode to) {
+        float x1 = gridToScreenX(from.getGridX());
+        float y1 = gridToScreenY(from.getGridY());
+        float x2 = gridToScreenX(to.getGridX());
+        float y2 = gridToScreenY(to.getGridY());
+
+        boolean fromUnlocked = ClientSkillData.get().hasSkill(from.getId());
+        boolean toUnlocked = ClientSkillData.get().hasSkill(to.getId());
+
+        int color;
+        if (toUnlocked)
+            color = 0xFF55FF55;
+        else if (fromUnlocked)
+            color = 0xFFFFFF55;
+        else
+            color = 0xFF444444;
+
+        drawLine(graphics, x1, y1, x2, y2, color);
+    }
+
+    private void drawLine(GuiGraphics graphics, float x1, float y1, float x2, float y2, int color) {
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float len = (float) Math.sqrt(dx * dx + dy * dy);
+        if (len < 0.01f)
+            return;
+        int steps = (int) len;
+        if (steps < 1)
+            steps = 1;
+        float stepX = dx / steps;
+        float stepY = dy / steps;
+
+        int thickness = 2;
+        for (int i = 0; i <= steps; i++) {
+            float px = x1 + stepX * i;
+            float py = y1 + stepY * i;
+            graphics.fill(
+                    (int) (px - thickness / 2f), (int) (py - thickness / 2f),
+                    (int) (px + thickness / 2f), (int) (py + thickness / 2f),
+                    color);
+        }
     }
 
     private void drawHeader(GuiGraphics graphics) {
@@ -215,7 +368,7 @@ public class SkillTreeScreen extends Screen {
 
     private void drawLegend(GuiGraphics graphics) {
         int x = 8;
-        int y = this.height - 50;
+        int y = this.height - 70;
 
         graphics.drawString(this.font, "§7Legenda:", x, y, 0xFFFFFF);
         graphics.drawString(this.font, "§c● §7Bloqueado", x, y + 12, 0xFFFFFF);
@@ -223,40 +376,105 @@ public class SkillTreeScreen extends Screen {
         graphics.drawString(this.font, "§a● §7Comprado", x, y + 36, 0xFFFFFF);
     }
 
-    private void drawNode(GuiGraphics graphics, SkillNode node) {
-        // Coordenada do nó na tela
+    private void drawSelectedPanel(GuiGraphics graphics) {
+        if (selectedNode == null)
+            return;
+
+        int panelY = this.height - 45;
+        int panelX = this.width / 2 - 200;
+        int panelW = 400;
+
+        graphics.fill(panelX, panelY, panelX + panelW, panelY + 20, 0xAA000000);
+
+        boolean unlocked = ClientSkillData.get().hasSkill(selectedNode.getId());
+        String status;
+        if (unlocked)
+            status = "§a✔ Aprendida";
+        else if (canUnlock(selectedNode))
+            status = "§e○ Disponível";
+        else
+            status = "§c✘ Bloqueada";
+
+        graphics.drawCenteredString(this.font,
+                "§f" + selectedNode.getDisplayName()
+                        + " §7| " + status
+                        + " §7| §e" + selectedNode.getCost() + " pts",
+                this.width / 2, panelY + 6, 0xFFFFFF);
+    }
+
+    private void drawTooltip(GuiGraphics graphics, SkillNode node, int mouseX, int mouseY) {
+        List<Component> lines = new ArrayList<>();
+        lines.add(Component.literal("§6" + node.getDisplayName()));
+        lines.add(Component.literal("§7" + node.getBranch().getDisplayName()
+                + " • " + node.getType().getDisplayName()));
+        lines.add(Component.literal("§f" + node.getDescription()));
+        lines.add(Component.literal("§7Custo: §e" + node.getCost() + " pts"));
+
+        boolean unlocked = ClientSkillData.get().hasSkill(node.getId());
+        if (unlocked) {
+            lines.add(Component.literal("§a✔ Já aprendida"));
+        } else if (canUnlock(node)) {
+            lines.add(Component.literal("§e○ Clique para selecionar"));
+        } else {
+            lines.add(Component.literal("§c✘ Pré-requisitos:"));
+            for (String pre : node.getPrerequisites()) {
+                boolean preUnlocked = ClientSkillData.get().hasSkill(pre);
+                lines.add(Component.literal("  §7- " + pre
+                        + (preUnlocked ? " §a✔" : " §c✘")));
+            }
+        }
+
+        // ===== Converte Component -> FormattedCharSequence pro renderTooltip =====
+        List<net.minecraft.util.FormattedCharSequence> tooltipLines = new ArrayList<>();
+        for (Component c : lines) {
+            tooltipLines.add(c.getVisualOrderText());
+        }
+        graphics.renderTooltip(this.font, tooltipLines, mouseX, mouseY);
+    }
+
+    private void drawNode(GuiGraphics graphics, SkillNode node, boolean selected, boolean hovered) {
         float screenX = gridToScreenX(node.getGridX());
         float screenY = gridToScreenY(node.getGridY());
 
-        // Cor conforme o estado
         boolean unlocked = ClientSkillData.get().hasSkill(node.getId());
         boolean available = !unlocked && canUnlock(node);
 
         int color;
         if (unlocked)
-            color = 0xFF55FF55; // verde
+            color = 0xFF55FF55;
         else if (available)
-            color = 0xFFFFFF55; // amarelo
+            color = 0xFFFFFF55;
         else
-            color = 0xFFFF5555; // vermelho
+            color = 0xFFFF5555;
 
-        // Nó central é maior
         int radius = node.isCentral() ? NODE_RADIUS + 3 : NODE_RADIUS;
 
-        // Contorno preto (borda)
+        // Contorno preto
         graphics.fill(
                 (int) (screenX - radius - 1), (int) (screenY - radius - 1),
                 (int) (screenX + radius + 1), (int) (screenY + radius + 1),
                 0xFF000000);
 
-        // Círculo (na real, um quadrado com o miolo da cor — limitado pela API do
-        // GuiGraphics)
+        // Borda de seleção ou hover
+        if (selected) {
+            graphics.fill(
+                    (int) (screenX - radius - 2), (int) (screenY - radius - 2),
+                    (int) (screenX + radius + 2), (int) (screenY + radius + 2),
+                    0xFFFFFFFF);
+        } else if (hovered) {
+            graphics.fill(
+                    (int) (screenX - radius - 2), (int) (screenY - radius - 2),
+                    (int) (screenX + radius + 2), (int) (screenY + radius + 2),
+                    0xAAAAAAAA);
+        }
+
+        // Corpo
         graphics.fill(
                 (int) (screenX - radius), (int) (screenY - radius),
                 (int) (screenX + radius), (int) (screenY + radius),
                 color);
 
-        // Se for o nó central, escreve um "C" no meio
+        // Letra "C" no central
         if (node.isCentral()) {
             String letter = "C";
             int w = this.font.width(letter);
@@ -267,21 +485,16 @@ public class SkillTreeScreen extends Screen {
     }
 
     // =====================================================================
-    // CONVERSÃO grid -> tela
+    // Conversão grid -> tela
     // =====================================================================
     private float gridToScreenX(float gridX) {
-        float centerX = this.width / 2.0f;
-        return centerX + (gridX - cameraX) * CELL_SIZE * zoom;
+        return this.width / 2.0f + (gridX - cameraX) * CELL_SIZE * zoom;
     }
 
     private float gridToScreenY(float gridY) {
-        float centerY = this.height / 2.0f;
-        return centerY + (gridY - cameraY) * CELL_SIZE * zoom;
+        return this.height / 2.0f + (gridY - cameraY) * CELL_SIZE * zoom;
     }
 
-    // =====================================================================
-    // HELPERS
-    // =====================================================================
     private boolean canUnlock(SkillNode node) {
         if (ClientSkillData.get().hasSkill(node.getId()))
             return false;
