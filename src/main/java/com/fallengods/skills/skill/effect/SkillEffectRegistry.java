@@ -15,7 +15,7 @@ public class SkillEffectRegistry {
     // nodeId -> List<StatBonus>
     private static final Map<String, List<StatBonus>> NODE_EFFECTS = new HashMap<>();
 
-    // classType -> List<StatBonus> (passivas base, aplicadas automaticamente)
+    // classType -> List<StatBonus> (passivas base antigas — agora vazias)
     private static final Map<ClassType, List<StatBonus>> CLASS_BASE = new HashMap<>();
 
     public static void init() {
@@ -24,9 +24,29 @@ public class SkillEffectRegistry {
     }
 
     // =====================================================================
-    // Efeitos dos nós — RAMO DEFESA DO GUERREIRO
+    // Efeitos dos nós
     // =====================================================================
     private static void registerNodeEffects() {
+
+        // ===== NÓS CENTRAIS (passiva base da classe) =====
+        add("guerreiro_central",
+                StatBonus.of(StatType.DAMAGE_SWORD, 0.20),
+                StatBonus.of(StatType.DAMAGE_AXE, 0.20),
+                StatBonus.of(StatType.KNOCKBACK_RESISTANCE, 0.10));
+
+        add("arqueiro_central",
+                StatBonus.of(StatType.DAMAGE_BOW, 0.20),
+                StatBonus.of(StatType.MOVEMENT_SPEED, 0.10));
+
+        add("mago_central",
+                StatBonus.of(StatType.DAMAGE_MAGIC, 0.20),
+                StatBonus.of(StatType.COOLDOWN_REDUCTION, 0.15));
+
+        add("sacerdote_central",
+                StatBonus.of(StatType.HEAL_POWER, 0.20),
+                StatBonus.health(4)); // 2 corações = 4 HP
+
+        // ===== RAMO DEFESA — GUERREIRO =====
         add("guerreiro_def_01", StatBonus.armor(1));
         add("guerreiro_def_02", StatBonus.health(1));
         add("guerreiro_def_03", StatBonus.knockbackResist(0.03));
@@ -76,33 +96,12 @@ public class SkillEffectRegistry {
     }
 
     // =====================================================================
-    // Passivas base — aplicadas automaticamente ao escolher a classe
+    // Passivas base — agora vazio (tudo migrou pros nós centrais)
     // =====================================================================
     private static void registerClassBase() {
-        // Guerreiro: +20% dano com Espadas e Machados, +10% resistência a knockback
-        List<StatBonus> guerreiro = new ArrayList<>();
-        guerreiro.add(StatBonus.of(StatType.DAMAGE_SWORD, 0.20));
-        guerreiro.add(StatBonus.of(StatType.DAMAGE_AXE, 0.20));
-        guerreiro.add(StatBonus.of(StatType.KNOCKBACK_RESISTANCE, 0.10));
-        CLASS_BASE.put(ClassType.GUERREIRO, guerreiro);
-
-        // Arqueiro: +20% dano com Arcos, +10% velocidade de movimento
-        List<StatBonus> arqueiro = new ArrayList<>();
-        arqueiro.add(StatBonus.of(StatType.DAMAGE_BOW, 0.20));
-        arqueiro.add(StatBonus.of(StatType.MOVEMENT_SPEED, 0.10));
-        CLASS_BASE.put(ClassType.ARQUEIRO, arqueiro);
-
-        // Mago: +20% dano mágico, +15% redução de cooldown
-        List<StatBonus> mago = new ArrayList<>();
-        mago.add(StatBonus.of(StatType.DAMAGE_MAGIC, 0.20));
-        mago.add(StatBonus.of(StatType.COOLDOWN_REDUCTION, 0.15));
-        CLASS_BASE.put(ClassType.MAGO, mago);
-
-        // Sacerdote: +20% poder de cura, +2 corações
-        List<StatBonus> sacerdote = new ArrayList<>();
-        sacerdote.add(StatBonus.of(StatType.HEAL_POWER, 0.20));
-        sacerdote.add(StatBonus.health(4));
-        CLASS_BASE.put(ClassType.SACERDOTE, sacerdote);
+        // Nada aqui. A passiva base agora vive no nó central de cada classe.
+        // Mantido o método vazio pra facilitar adicionar bônus futuros que
+        // NÃO sejam representados por um nó (ex: bônus de debug, eventos).
     }
 
     // =====================================================================

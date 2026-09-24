@@ -2,6 +2,7 @@ package com.fallengods.skills.network;
 
 import com.fallengods.skills.capability.SkillDataCapability;
 import com.fallengods.skills.classsystem.ClassType;
+import com.fallengods.skills.skill.SkillRegistry;
 import com.fallengods.skills.skill.effect.SkillEffectRegistry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -34,7 +35,13 @@ public class PacketSelectClass {
                         data.setPlayerClass(msg.classType);
                         data.addSkillPoints(1);
 
-                        // ===== CORREÇÃO: recalcular bônus após definir a classe =====
+                        // ===== Desbloqueia o nó central automaticamente =====
+                        String centralId = SkillRegistry.getCentralNodeId(msg.classType);
+                        if (centralId != null) {
+                            data.unlockSkill(centralId);
+                        }
+
+                        // Recalcula bônus (inclui agora a passiva base + o central)
                         data.setAccumulatedBonuses(
                                 SkillEffectRegistry.recalcBonuses(
                                         data.getPlayerClass(),

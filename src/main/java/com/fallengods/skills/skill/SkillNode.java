@@ -67,6 +67,11 @@ public class SkillNode {
         return prerequisites.isEmpty();
     }
 
+    /** Nó central: o "início" da árvore, comprado automaticamente. */
+    public boolean isCentral() {
+        return id.endsWith("_central");
+    }
+
     // ===== Builder =====
     public static Builder builder(String id) {
         return new Builder(id);

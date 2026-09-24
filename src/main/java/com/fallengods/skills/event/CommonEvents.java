@@ -7,6 +7,7 @@ import com.fallengods.skills.command.SkillsCommand;
 import com.fallengods.skills.network.PacketHandler;
 import com.fallengods.skills.network.PacketOpenClassScreen;
 import com.fallengods.skills.network.PacketSyncSkillData;
+import com.fallengods.skills.skill.SkillRegistry;
 import com.fallengods.skills.skill.effect.SkillEffectRegistry;
 import com.fallengods.skills.skill.effect.StatType;
 import net.minecraft.server.level.ServerPlayer;
@@ -27,6 +28,15 @@ public class CommonEvents {
             return;
 
         player.getCapability(SkillDataCapability.PLAYER_SKILL_DATA).ifPresent(data -> {
+            // Se o jogador já tem classe mas não tem o nó central (jogador antigo), dá pra
+            // ele.
+            if (data.getPlayerClass() != ClassType.NONE) {
+                String centralId = SkillRegistry.getCentralNodeId(data.getPlayerClass());
+                if (centralId != null && !data.hasSkill(centralId)) {
+                    data.unlockSkill(centralId);
+                }
+            }
+
             Map<StatType, Double> bonuses = SkillEffectRegistry.recalcBonuses(
                     data.getPlayerClass(),
                     data.getUnlockedSkillsSet());
