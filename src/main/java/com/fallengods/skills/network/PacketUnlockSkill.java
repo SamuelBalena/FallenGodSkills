@@ -4,6 +4,7 @@ import com.fallengods.skills.capability.SkillDataCapability;
 import com.fallengods.skills.skill.SkillNode;
 import com.fallengods.skills.skill.SkillRegistry;
 import com.fallengods.skills.skill.SkillTree;
+import com.fallengods.skills.skill.effect.SkillEffectRegistry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -60,6 +61,12 @@ public class PacketUnlockSkill {
 
                 data.setSkillPoints(data.getSkillPoints() - node.getCost());
                 data.unlockSkill(msg.skillId);
+
+                // ===== CORREÇÃO: recalcular bônus depois de comprar =====
+                data.setAccumulatedBonuses(
+                        SkillEffectRegistry.recalcBonuses(
+                                data.getPlayerClass(),
+                                data.getUnlockedSkillsSet()));
 
                 player.sendSystemMessage(Component.literal(
                         "§aSkill desbloqueada: §f" + node.getDisplayName()));

@@ -2,6 +2,8 @@ package com.fallengods.skills.client.gui;
 
 import com.fallengods.skills.classsystem.ClassType;
 import com.fallengods.skills.client.ClientSkillData;
+import com.fallengods.skills.network.PacketHandler;
+import com.fallengods.skills.network.PacketUnlockSkill;
 import com.fallengods.skills.skill.SkillNode;
 import com.fallengods.skills.skill.SkillRegistry;
 import com.fallengods.skills.skill.SkillTree;
@@ -71,6 +73,30 @@ public class SkillTreeScreen extends Screen {
         learnButton.visible = false;
         learnButton.active = false;
         this.addRenderableWidget(learnButton);
+
+        // ===== Registra listener pro ClientSkillData =====
+        ClientSkillData.setChangeListener(this::onSkillDataChanged);
+    }
+
+    @Override
+    public void removed() {
+        ClientSkillData.clearChangeListener();
+        super.removed();
+    }
+
+    /**
+     * Chamado quando o servidor sincroniza os dados (ex: após comprar skill).
+     * Roda FORA do render, então é seguro mexer nos widgets.
+     */
+    private void onSkillDataChanged() {
+        // Só age se a tela ainda está aberta
+        if (this.minecraft == null || this.minecraft.screen != this)
+            return;
+
+        // Revalida o botão "Aprender" (pode ter mudado o estado do nó selecionado)
+        if (selectedNode != null) {
+            selectNode(selectedNode);
+        }
     }
 
     private void recenter() {
@@ -131,17 +157,18 @@ public class SkillTreeScreen extends Screen {
         }
     }
 
+    // =====================================================================
+    // COMPRA — manda pacote pro servidor
+    // =====================================================================
     private void tryLearn() {
         if (selectedNode == null)
             return;
 
-        // 5.5.C vai mandar o pacote pro servidor. Por enquanto, só log.
-        if (this.minecraft != null && this.minecraft.player != null) {
-            this.minecraft.player.displayClientMessage(
-                    Component.literal("§7[Debug] Você tentou aprender: §f"
-                            + selectedNode.getDisplayName()),
-                    false);
-        }
+        // Manda pro servidor. O servidor vai validar tudo (pontos,
+        // pré-requisitos, classe) e devolver um PacketSyncSkillData.
+        // O listener onSkillDataChanged() vai revalidar o botão.
+        PacketHandler.INSTANCE.sendToServer(
+                new PacketUnlockSkill(selectedNode.getId()));
     }
 
     // =====================================================================
@@ -306,7 +333,7 @@ public class SkillTreeScreen extends Screen {
         // 4. Widgets (botões)
         super.render(graphics, mouseX, mouseY, partialTick);
 
-        // 5. Tooltip POR ÚLTIMO (fica em cima de tudo)
+        // 5. Tooltip por último
         if (hovered != null) {
             drawTooltip(graphics, hovered, mouseX, mouseY);
         }
@@ -424,7 +451,6 @@ public class SkillTreeScreen extends Screen {
             }
         }
 
-        // ===== Converte Component -> FormattedCharSequence pro renderTooltip =====
         List<net.minecraft.util.FormattedCharSequence> tooltipLines = new ArrayList<>();
         for (Component c : lines) {
             tooltipLines.add(c.getVisualOrderText());
@@ -449,13 +475,11 @@ public class SkillTreeScreen extends Screen {
 
         int radius = node.isCentral() ? NODE_RADIUS + 3 : NODE_RADIUS;
 
-        // Contorno preto
         graphics.fill(
                 (int) (screenX - radius - 1), (int) (screenY - radius - 1),
                 (int) (screenX + radius + 1), (int) (screenY + radius + 1),
                 0xFF000000);
 
-        // Borda de seleção ou hover
         if (selected) {
             graphics.fill(
                     (int) (screenX - radius - 2), (int) (screenY - radius - 2),
@@ -468,13 +492,11 @@ public class SkillTreeScreen extends Screen {
                     0xAAAAAAAA);
         }
 
-        // Corpo
         graphics.fill(
                 (int) (screenX - radius), (int) (screenY - radius),
                 (int) (screenX + radius), (int) (screenY + radius),
                 color);
 
-        // Letra "C" no central
         if (node.isCentral()) {
             String letter = "C";
             int w = this.font.width(letter);
