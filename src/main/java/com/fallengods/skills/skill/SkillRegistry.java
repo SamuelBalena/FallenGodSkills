@@ -373,8 +373,7 @@ public class SkillRegistry {
         }
 
         // =====================================================================
-        // ARQUEIRO — completo (Precisão = OFENSIVO, Mobilidade = UTILIDADE,
-        // Especialização = DEFESA)
+        // ARQUEIRO — completo (não mexe)
         // =====================================================================
         private static SkillTree buildArqueiro() {
                 SkillTree tree = new SkillTree(ClassType.ARQUEIRO);
@@ -385,9 +384,6 @@ public class SkillRegistry {
                                 .branch(SkillBranch.OFENSIVO).type(SkillType.PASSIVA)
                                 .cost(0).grid(0, 0).build());
 
-                // ================================================================
-                // RAMO PRECISÃO (36 nós) → OFENSIVO, canto superior direito
-                // ================================================================
                 SkillBranch P = SkillBranch.OFENSIVO;
 
                 tree.add(SkillNode.builder("arqueiro_pre_01")
@@ -500,9 +496,6 @@ public class SkillRegistry {
                                 .name("Tiro Fatal").desc("Ativa: executa alvo abaixo de 25% de vida.")
                                 .branch(P).type(SkillType.ATIVA).grid(4, 20).prereq("arqueiro_pre_35").build());
 
-                // ================================================================
-                // RAMO MOBILIDADE (32 nós) → UTILIDADE, canto inferior
-                // ================================================================
                 SkillBranch M = SkillBranch.UTILIDADE;
 
                 tree.add(SkillNode.builder("arqueiro_mob_01")
@@ -604,9 +597,6 @@ public class SkillRegistry {
                                 .name("Espírito Livre").desc("Passiva: remove lentidão a cada 15s. (efeito dinâmico)")
                                 .branch(M).grid(0, 24).prereq("arqueiro_mob_30", "arqueiro_mob_31").build());
 
-                // ================================================================
-                // RAMO ESPECIALIZAÇÃO (32 nós) → DEFESA, canto superior esquerdo
-                // ================================================================
                 SkillBranch E = SkillBranch.DEFESA;
 
                 tree.add(SkillNode.builder("arqueiro_esp_01")
@@ -710,23 +700,345 @@ public class SkillRegistry {
         }
 
         // =====================================================================
-        // MAGO — placeholder (a popular na 5.6.3)
+        // MAGO — completo (Poder Arcano = OFENSIVO, Defesa Mágica = DEFESA,
+        // Controle = UTILIDADE)
         // =====================================================================
         private static SkillTree buildMago() {
                 SkillTree tree = new SkillTree(ClassType.MAGO);
+
                 tree.add(SkillNode.builder("mago_central")
                                 .name("Sangue Arcano")
                                 .desc("Passiva base: +20% dano mágico, +15% redução de cooldown.")
-                                .branch(SkillBranch.OFENSIVO).cost(0).grid(0, 0).build());
+                                .branch(SkillBranch.OFENSIVO).type(SkillType.PASSIVA)
+                                .cost(0).grid(0, 0).build());
+
+                // ================================================================
+                // RAMO PODER ARCANO (36 nós) → OFENSIVO, canto superior direito
+                // ================================================================
+                SkillBranch O = SkillBranch.OFENSIVO;
+
                 tree.add(SkillNode.builder("mago_pod_01")
-                                .name("+3% Dano Mágico").desc("Placeholder.")
-                                .branch(SkillBranch.OFENSIVO).grid(4, -2).prereq("mago_central").build());
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(O).grid(4, -2).prereq("mago_central").build());
+                tree.add(SkillNode.builder("mago_pod_02")
+                                .name("+2% Redução de Cooldown").desc("-2% de cooldown de skills.")
+                                .branch(O).grid(4, -1).prereq("mago_pod_01").build());
+                tree.add(SkillNode.builder("mago_pod_03")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(O).grid(4, 0).prereq("mago_pod_02").build());
+                tree.add(SkillNode.builder("mago_pod_04")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(O).grid(5, 1).prereq("mago_pod_03").build());
+                tree.add(SkillNode.builder("mago_pod_05")
+                                .name("+2% Redução de Cooldown").desc("-2% de cooldown.")
+                                .branch(O).grid(3, 1).prereq("mago_pod_03").build());
+                tree.add(SkillNode.builder("mago_pod_06")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(O).grid(5, 2).prereq("mago_pod_04").build());
+                tree.add(SkillNode.builder("mago_pod_07")
+                                .name("Afinidade Arcana").desc("Passiva: +15% de dano mágico.")
+                                .branch(O).grid(3, 2).prereq("mago_pod_05").build());
+                tree.add(SkillNode.builder("mago_pod_08")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(O).grid(5, 3).prereq("mago_pod_06").build());
+                tree.add(SkillNode.builder("mago_pod_09")
+                                .name("+2% Redução de Cooldown").desc("-2% de cooldown.")
+                                .branch(O).grid(3, 3).prereq("mago_pod_07").build());
+                tree.add(SkillNode.builder("mago_pod_10")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(O).grid(4, 4).prereq("mago_pod_08", "mago_pod_09").build());
+                tree.add(SkillNode.builder("mago_pod_11")
+                                .name("Mente Clara").desc("Passiva: -20% de cooldown de todas as skills.")
+                                .branch(O).grid(5, 5).prereq("mago_pod_10").build());
+                tree.add(SkillNode.builder("mago_pod_12")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(O).grid(3, 5).prereq("mago_pod_10").build());
+                tree.add(SkillNode.builder("mago_pod_13")
+                                .name("+2% Redução de Cooldown").desc("-2% de cooldown.")
+                                .branch(O).grid(5, 6).prereq("mago_pod_11").build());
+                tree.add(SkillNode.builder("mago_pod_14")
+                                .name("Poder das Runas")
+                                .desc("Passiva: +10% dano mágico por skill desbloqueada. (efeito dinâmico)")
+                                .branch(O).grid(3, 6).prereq("mago_pod_12").build());
+                tree.add(SkillNode.builder("mago_pod_15")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(O).grid(5, 7).prereq("mago_pod_13").build());
+                tree.add(SkillNode.builder("mago_pod_16")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(O).grid(3, 7).prereq("mago_pod_14").build());
+                tree.add(SkillNode.builder("mago_pod_17")
+                                .name("+2% Redução de Cooldown").desc("-2% de cooldown.")
+                                .branch(O).grid(5, 8).prereq("mago_pod_15").build());
+                tree.add(SkillNode.builder("mago_pod_18")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(O).grid(3, 8).prereq("mago_pod_16").build());
+                tree.add(SkillNode.builder("mago_pod_19")
+                                .name("Tempestade Arcana").desc("Ativa: raios em área. (CD 25s)")
+                                .branch(O).type(SkillType.ATIVA).grid(4, 9).prereq("mago_pod_17", "mago_pod_18")
+                                .build());
+                tree.add(SkillNode.builder("mago_pod_20")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(O).grid(5, 10).prereq("mago_pod_19").build());
+                tree.add(SkillNode.builder("mago_pod_21")
+                                .name("+2% Redução de Cooldown").desc("-2% de cooldown.")
+                                .branch(O).grid(3, 10).prereq("mago_pod_19").build());
+                tree.add(SkillNode.builder("mago_pod_22")
+                                .name("Orbe Arcano").desc("Ativa: orbe que explode ao contato.")
+                                .branch(O).type(SkillType.ATIVA).grid(5, 11).prereq("mago_pod_20").build());
+                tree.add(SkillNode.builder("mago_pod_23")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(O).grid(3, 11).prereq("mago_pod_21").build());
+                tree.add(SkillNode.builder("mago_pod_24")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(O).grid(4, 12).prereq("mago_pod_22", "mago_pod_23").build());
+                tree.add(SkillNode.builder("mago_pod_25")
+                                .name("Sobrecarga")
+                                .desc("Passiva: 15% chance de não gastar cooldown. (efeito dinâmico)")
+                                .branch(O).grid(5, 13).prereq("mago_pod_24").build());
+                tree.add(SkillNode.builder("mago_pod_26")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(O).grid(3, 13).prereq("mago_pod_24").build());
+                tree.add(SkillNode.builder("mago_pod_27")
+                                .name("Chuva de Meteoros").desc("Ativa: pequenos meteoros em área. (CD 22s)")
+                                .branch(O).type(SkillType.ATIVA).grid(5, 14).prereq("mago_pod_25").build());
+                tree.add(SkillNode.builder("mago_pod_28")
+                                .name("+2% Redução de Cooldown").desc("-2% de cooldown.")
+                                .branch(O).grid(3, 14).prereq("mago_pod_26").build());
+                tree.add(SkillNode.builder("mago_pod_29")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(O).grid(4, 15).prereq("mago_pod_27", "mago_pod_28").build());
+                tree.add(SkillNode.builder("mago_pod_30")
+                                .name("Catalisador").desc("Passiva: +dano conforme mana gasta. (efeito dinâmico)")
+                                .branch(O).grid(5, 16).prereq("mago_pod_29").build());
+                tree.add(SkillNode.builder("mago_pod_31")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(O).grid(3, 16).prereq("mago_pod_29").build());
+                tree.add(SkillNode.builder("mago_pod_32")
+                                .name("+2% Redução de Cooldown").desc("-2% de cooldown.")
+                                .branch(O).grid(5, 17).prereq("mago_pod_30").build());
+                tree.add(SkillNode.builder("mago_pod_33")
+                                .name("Explosão de Mana").desc("Ativa: explosão grande ao redor.")
+                                .branch(O).type(SkillType.ATIVA).grid(3, 17).prereq("mago_pod_31").build());
+                tree.add(SkillNode.builder("mago_pod_34")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(O).grid(5, 18).prereq("mago_pod_32").build());
+                tree.add(SkillNode.builder("mago_pod_35")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(O).grid(3, 18).prereq("mago_pod_33").build());
+                tree.add(SkillNode.builder("mago_pod_36")
+                                .name("Arquimago")
+                                .desc("Passiva: +25% dano mágico acima de 70% de vida. (efeito dinâmico)")
+                                .branch(O).grid(4, 19).prereq("mago_pod_34", "mago_pod_35").build());
+
+                // ================================================================
+                // RAMO DEFESA MÁGICA (32 nós) → DEFESA, canto superior esquerdo
+                // ================================================================
+                SkillBranch D = SkillBranch.DEFESA;
+
                 tree.add(SkillNode.builder("mago_def_01")
-                                .name("+1 Armadura").desc("Placeholder.")
-                                .branch(SkillBranch.DEFESA).grid(-4, -2).prereq("mago_central").build());
+                                .name("+1 Armadura").desc("+1 de armadura permanente.")
+                                .branch(D).grid(-4, -2).prereq("mago_central").build());
+                tree.add(SkillNode.builder("mago_def_02")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(D).grid(-4, -1).prereq("mago_def_01").build());
+                tree.add(SkillNode.builder("mago_def_03")
+                                .name("+3% Redução de Dano").desc("Reduz 3% de dano.")
+                                .branch(D).grid(-4, 0).prereq("mago_def_02").build());
+                tree.add(SkillNode.builder("mago_def_04")
+                                .name("+1 Armadura").desc("+1 de armadura permanente.")
+                                .branch(D).grid(-5, 1).prereq("mago_def_03").build());
+                tree.add(SkillNode.builder("mago_def_05")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(D).grid(-3, 1).prereq("mago_def_03").build());
+                tree.add(SkillNode.builder("mago_def_06")
+                                .name("Escudo Místico")
+                                .desc("Passiva: absorção ao tomar dano. (CD 15s) (efeito dinâmico)")
+                                .branch(D).grid(-5, 2).prereq("mago_def_04").build());
+                tree.add(SkillNode.builder("mago_def_07")
+                                .name("+1 Armadura").desc("+1 de armadura permanente.")
+                                .branch(D).grid(-3, 2).prereq("mago_def_05").build());
+                tree.add(SkillNode.builder("mago_def_08")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(D).grid(-5, 3).prereq("mago_def_06").build());
+                tree.add(SkillNode.builder("mago_def_09")
+                                .name("+3% Redução de Dano").desc("Reduz 3% de dano.")
+                                .branch(D).grid(-3, 3).prereq("mago_def_07").build());
+                tree.add(SkillNode.builder("mago_def_10")
+                                .name("Barreira Arcana").desc("Ativa: bloqueia projéteis por 6s.")
+                                .branch(D).type(SkillType.ATIVA).grid(-4, 4).prereq("mago_def_08", "mago_def_09")
+                                .build());
+                tree.add(SkillNode.builder("mago_def_11")
+                                .name("+1 Armadura").desc("+1 de armadura permanente.")
+                                .branch(D).grid(-5, 5).prereq("mago_def_10").build());
+                tree.add(SkillNode.builder("mago_def_12")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(D).grid(-3, 5).prereq("mago_def_10").build());
+                tree.add(SkillNode.builder("mago_def_13")
+                                .name("Drenar Essência")
+                                .desc("Passiva: cura 1 coração a cada 3 feitiços. (efeito dinâmico)")
+                                .branch(D).grid(-5, 6).prereq("mago_def_11").build());
+                tree.add(SkillNode.builder("mago_def_14")
+                                .name("+1 Armadura").desc("+1 de armadura permanente.")
+                                .branch(D).grid(-3, 6).prereq("mago_def_12").build());
+                tree.add(SkillNode.builder("mago_def_15")
+                                .name("+3% Redução de Dano").desc("Reduz 3% de dano.")
+                                .branch(D).grid(-5, 7).prereq("mago_def_13").build());
+                tree.add(SkillNode.builder("mago_def_16")
+                                .name("Escudo de Mana").desc("Ativa: consome mana para escudo forte.")
+                                .branch(D).type(SkillType.ATIVA).grid(-3, 7).prereq("mago_def_14").build());
+                tree.add(SkillNode.builder("mago_def_17")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(D).grid(-5, 8).prereq("mago_def_15").build());
+                tree.add(SkillNode.builder("mago_def_18")
+                                .name("+1 Armadura").desc("+1 de armadura permanente.")
+                                .branch(D).grid(-3, 8).prereq("mago_def_16").build());
+                tree.add(SkillNode.builder("mago_def_19")
+                                .name("Absorção Arcana").desc("Passiva: parte do dano vira mana. (efeito dinâmico)")
+                                .branch(D).grid(-4, 9).prereq("mago_def_17", "mago_def_18").build());
+                tree.add(SkillNode.builder("mago_def_20")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(D).grid(-5, 10).prereq("mago_def_19").build());
+                tree.add(SkillNode.builder("mago_def_21")
+                                .name("+3% Redução de Dano").desc("Reduz 3% de dano.")
+                                .branch(D).grid(-3, 10).prereq("mago_def_19").build());
+                tree.add(SkillNode.builder("mago_def_22")
+                                .name("Campo de Força").desc("Ativa: barreira que reduz dano em área.")
+                                .branch(D).type(SkillType.ATIVA).grid(-5, 11).prereq("mago_def_20").build());
+                tree.add(SkillNode.builder("mago_def_23")
+                                .name("+1 Armadura").desc("+1 de armadura permanente.")
+                                .branch(D).grid(-3, 11).prereq("mago_def_21").build());
+                tree.add(SkillNode.builder("mago_def_24")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(D).grid(-4, 12).prereq("mago_def_22", "mago_def_23").build());
+                tree.add(SkillNode.builder("mago_def_25")
+                                .name("Pele Mágica")
+                                .desc("Passiva: +10% de resistência a dano mágico. (efeito dinâmico)")
+                                .branch(D).grid(-5, 13).prereq("mago_def_24").build());
+                tree.add(SkillNode.builder("mago_def_26")
+                                .name("+1 Armadura").desc("+1 de armadura permanente.")
+                                .branch(D).grid(-3, 13).prereq("mago_def_24").build());
+                tree.add(SkillNode.builder("mago_def_27")
+                                .name("+3% Redução de Dano").desc("Reduz 3% de dano.")
+                                .branch(D).grid(-5, 14).prereq("mago_def_25").build());
+                tree.add(SkillNode.builder("mago_def_28")
+                                .name("Reflexão").desc("Ativa: reflete o próximo projétil recebido.")
+                                .branch(D).type(SkillType.ATIVA).grid(-3, 14).prereq("mago_def_26").build());
+                tree.add(SkillNode.builder("mago_def_29")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(D).grid(-4, 15).prereq("mago_def_27", "mago_def_28").build());
+                tree.add(SkillNode.builder("mago_def_30")
+                                .name("+1 Armadura").desc("+1 de armadura permanente.")
+                                .branch(D).grid(-5, 16).prereq("mago_def_29").build());
+                tree.add(SkillNode.builder("mago_def_31")
+                                .name("Última Barreira").desc("Passiva: escudo forte abaixo de 20%. (efeito dinâmico)")
+                                .branch(D).grid(-3, 16).prereq("mago_def_29").build());
+                tree.add(SkillNode.builder("mago_def_32")
+                                .name("Fortaleza Arcana").desc("Passiva: +2 Armadura e +1 Coração permanente.")
+                                .branch(D).grid(-4, 17).prereq("mago_def_30", "mago_def_31").build());
+
+                // ================================================================
+                // RAMO CONTROLE (32 nós) → UTILIDADE, canto inferior
+                // ================================================================
+                SkillBranch U = SkillBranch.UTILIDADE;
+
                 tree.add(SkillNode.builder("mago_ctr_01")
-                                .name("Chama Interior").desc("Placeholder.")
-                                .branch(SkillBranch.UTILIDADE).grid(0, 4).prereq("mago_central").build());
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(U).grid(0, 4).prereq("mago_central").build());
+                tree.add(SkillNode.builder("mago_ctr_02")
+                                .name("+2% Redução de Cooldown").desc("-2% de cooldown.")
+                                .branch(U).grid(0, 5).prereq("mago_ctr_01").build());
+                tree.add(SkillNode.builder("mago_ctr_03")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(U).grid(0, 6).prereq("mago_ctr_02").build());
+                tree.add(SkillNode.builder("mago_ctr_04")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(U).grid(-1, 7).prereq("mago_ctr_03").build());
+                tree.add(SkillNode.builder("mago_ctr_05")
+                                .name("Chama Interior").desc("Ativa: bola de fogo pequena.")
+                                .branch(U).type(SkillType.ATIVA).grid(1, 7).prereq("mago_ctr_03").build());
+                tree.add(SkillNode.builder("mago_ctr_06")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(U).grid(-1, 8).prereq("mago_ctr_04").build());
+                tree.add(SkillNode.builder("mago_ctr_07")
+                                .name("+2% Redução de Cooldown").desc("-2% de cooldown.")
+                                .branch(U).grid(1, 8).prereq("mago_ctr_05").build());
+                tree.add(SkillNode.builder("mago_ctr_08")
+                                .name("Congelamento").desc("Ativa: lentidão forte por 4s.")
+                                .branch(U).type(SkillType.ATIVA).grid(-1, 9).prereq("mago_ctr_06").build());
+                tree.add(SkillNode.builder("mago_ctr_09")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(U).grid(1, 9).prereq("mago_ctr_07").build());
+                tree.add(SkillNode.builder("mago_ctr_10")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(U).grid(0, 10).prereq("mago_ctr_08", "mago_ctr_09").build());
+                tree.add(SkillNode.builder("mago_ctr_11")
+                                .name("Explosão Rúnica").desc("Ativa: pequena explosão no local.")
+                                .branch(U).type(SkillType.ATIVA).grid(-1, 11).prereq("mago_ctr_10").build());
+                tree.add(SkillNode.builder("mago_ctr_12")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(U).grid(1, 11).prereq("mago_ctr_10").build());
+                tree.add(SkillNode.builder("mago_ctr_13")
+                                .name("+2% Redução de Cooldown").desc("-2% de cooldown.")
+                                .branch(U).grid(-1, 12).prereq("mago_ctr_11").build());
+                tree.add(SkillNode.builder("mago_ctr_14")
+                                .name("Correntes Arcanas").desc("Ativa: prende alvo no lugar por 3s.")
+                                .branch(U).type(SkillType.ATIVA).grid(1, 12).prereq("mago_ctr_12").build());
+                tree.add(SkillNode.builder("mago_ctr_15")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(U).grid(0, 13).prereq("mago_ctr_13", "mago_ctr_14").build());
+                tree.add(SkillNode.builder("mago_ctr_16")
+                                .name("Nova de Gelo").desc("Ativa: congela inimigos próximos.")
+                                .branch(U).type(SkillType.ATIVA).grid(-1, 14).prereq("mago_ctr_15").build());
+                tree.add(SkillNode.builder("mago_ctr_17")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(U).grid(1, 14).prereq("mago_ctr_15").build());
+                tree.add(SkillNode.builder("mago_ctr_18")
+                                .name("+2% Redução de Cooldown").desc("-2% de cooldown.")
+                                .branch(U).grid(-1, 15).prereq("mago_ctr_16").build());
+                tree.add(SkillNode.builder("mago_ctr_19")
+                                .name("Teleporte Curto").desc("Ativa: teleporta pequena distância.")
+                                .branch(U).type(SkillType.ATIVA).grid(1, 15).prereq("mago_ctr_17").build());
+                tree.add(SkillNode.builder("mago_ctr_20")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(U).grid(0, 16).prereq("mago_ctr_18", "mago_ctr_19").build());
+                tree.add(SkillNode.builder("mago_ctr_21")
+                                .name("Silêncio").desc("Ativa: impede alvo de usar habilidades por 4s.")
+                                .branch(U).type(SkillType.ATIVA).grid(-1, 17).prereq("mago_ctr_20").build());
+                tree.add(SkillNode.builder("mago_ctr_22")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(U).grid(1, 17).prereq("mago_ctr_20").build());
+                tree.add(SkillNode.builder("mago_ctr_23")
+                                .name("+2% Redução de Cooldown").desc("-2% de cooldown.")
+                                .branch(U).grid(-1, 18).prereq("mago_ctr_21").build());
+                tree.add(SkillNode.builder("mago_ctr_24")
+                                .name("Campo de Gravidade").desc("Ativa: puxa inimigos para o centro.")
+                                .branch(U).type(SkillType.ATIVA).grid(1, 18).prereq("mago_ctr_22").build());
+                tree.add(SkillNode.builder("mago_ctr_25")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(U).grid(0, 19).prereq("mago_ctr_23", "mago_ctr_24").build());
+                tree.add(SkillNode.builder("mago_ctr_26")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(U).grid(-1, 20).prereq("mago_ctr_25").build());
+                tree.add(SkillNode.builder("mago_ctr_27")
+                                .name("+2% Redução de Cooldown").desc("-2% de cooldown.")
+                                .branch(U).grid(1, 20).prereq("mago_ctr_25").build());
+                tree.add(SkillNode.builder("mago_ctr_28")
+                                .name("Ilusão").desc("Ativa: cria ilusão que distrai inimigos.")
+                                .branch(U).type(SkillType.ATIVA).grid(-1, 21).prereq("mago_ctr_26").build());
+                tree.add(SkillNode.builder("mago_ctr_29")
+                                .name("+3% Dano Mágico").desc("+3% de dano mágico.")
+                                .branch(U).grid(1, 21).prereq("mago_ctr_27").build());
+                tree.add(SkillNode.builder("mago_ctr_30")
+                                .name("+2% Redução de Cooldown").desc("-2% de cooldown.")
+                                .branch(U).grid(0, 22).prereq("mago_ctr_28", "mago_ctr_29").build());
+                tree.add(SkillNode.builder("mago_ctr_31")
+                                .name("+0.5 Coração").desc("+1 de vida máxima.")
+                                .branch(U).grid(0, 23).prereq("mago_ctr_30").build());
+                tree.add(SkillNode.builder("mago_ctr_32")
+                                .name("Domínio Arcano")
+                                .desc("Passiva: inimigos próximos -15% velocidade. (efeito dinâmico)")
+                                .branch(U).grid(0, 24).prereq("mago_ctr_31").build());
+
                 return tree;
         }
 
