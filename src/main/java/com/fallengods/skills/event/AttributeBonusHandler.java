@@ -16,10 +16,8 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = FallenGodsSkills.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class AttributeBonusHandler {
 
-    /** UUID fixo do mod — usado para identificar os modifiers que NÓS aplicamos. */
     private static final UUID MOD_UUID = UUID.fromString("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
 
-    /** Roda a cada 20 ticks (1 segundo) para reaplicar os modifiers. */
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END)
@@ -27,13 +25,13 @@ public class AttributeBonusHandler {
         if (!(event.player instanceof ServerPlayer player))
             return;
         if (player.tickCount % 20 != 0)
-            return; // 1x por segundo
+            return;
 
         player.getCapability(SkillDataCapability.PLAYER_SKILL_DATA).ifPresent(data -> {
             for (StatType type : StatType.values()) {
                 Attribute attr = type.getVanillaAttribute();
                 if (attr == null)
-                    continue; // bônus do mod, não tem atributo
+                    continue;
 
                 AttributeInstance instance = player.getAttribute(attr);
                 if (instance == null)
@@ -41,7 +39,7 @@ public class AttributeBonusHandler {
 
                 double value = data.getBonus(type);
 
-                // Remove o modifier antigo (mesmo UUID)
+                // Remove o modifier antigo (se existir)
                 instance.removeModifier(MOD_UUID);
 
                 // Se tem valor, re-adiciona
@@ -58,26 +56,17 @@ public class AttributeBonusHandler {
         });
     }
 
-    /**
-     * Define se o bônus é aditivo (+N) ou multiplicativo (+N%).
-     * Por padrão, valores < 1.0 são multiplicativos (ex: 0.10 = +10%),
-     * e valores >= 1.0 são aditivos (ex: +2 de armadura).
-     */
     private static AttributeModifier.Operation getOperation(StatType type) {
         switch (type) {
+            case MOVEMENT_SPEED:
+            case ATTACK_SPEED:
+                return AttributeModifier.Operation.MULTIPLY_TOTAL;
+            case KNOCKBACK_RESISTANCE:
             case ARMOR:
             case ARMOR_TOUGHNESS:
             case MAX_HEALTH:
             case ATTACK_DAMAGE:
             case LUCK:
-                return AttributeModifier.Operation.ADDITION;
-            case MOVEMENT_SPEED:
-            case ATTACK_SPEED:
-                return AttributeModifier.Operation.MULTIPLY_TOTAL;
-            case KNOCKBACK_RESISTANCE:
-                // Knockback resistance vanilla é 0..1 (0% a 100% de resistência).
-                // ADDITION é o que faz +0.13 virar 0.13 de resistência real.
-                return AttributeModifier.Operation.ADDITION;
             default:
                 return AttributeModifier.Operation.ADDITION;
         }

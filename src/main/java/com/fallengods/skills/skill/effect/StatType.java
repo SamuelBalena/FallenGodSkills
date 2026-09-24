@@ -15,7 +15,7 @@ public enum StatType {
     KNOCKBACK_RESISTANCE("knockback_resistance", Attributes.KNOCKBACK_RESISTANCE),
     LUCK("luck", Attributes.LUCK),
 
-    // ===== Bônus do mod (sem atributo vanilla) =====
+    // ===== Bônus do mod =====
     DAMAGE_REDUCTION("damage_reduction", null),
     DAMAGE_SWORD("damage_sword", null),
     DAMAGE_AXE("damage_axe", null),
