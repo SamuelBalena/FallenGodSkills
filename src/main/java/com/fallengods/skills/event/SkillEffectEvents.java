@@ -2,7 +2,10 @@ package com.fallengods.skills.event;
 
 import com.fallengods.skills.FallenGodsSkills;
 import com.fallengods.skills.capability.SkillDataCapability;
+import com.fallengods.skills.skill.active.handler.NextHitBonusHandler;
 import com.fallengods.skills.skill.effect.StatType;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
@@ -20,30 +23,40 @@ public class SkillEffectEvents {
         if (!(attacker instanceof Player player))
             return;
 
-        // ===== Golpe Devastador (flag temporária) =====
-        if (player.getPersistentData().getBoolean("fgs_golpe_devastador")) {
-            event.setAmount(event.getAmount() * 1.5f);
-            player.getPersistentData().remove("fgs_golpe_devastador");
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-                    "§6Golpe Devastador §7consumido!"));
+        // ===== NextHitBonus (qualquer skill ativa "next hit") =====
+        CompoundTag nbt = player.getPersistentData();
+        for (String key : nbt.getAllKeys()) {
+            if (!key.startsWith(NextHitBonusHandler.NBT_PREFIX))
+                continue;
+            if (key.endsWith("_mult"))
+                continue;
+            if (!nbt.getBoolean(key))
+                continue;
+
+            // Consome
+            float mult = nbt.getFloat(key + "_mult");
+            event.setAmount(event.getAmount() * mult);
+            nbt.remove(key);
+            nbt.remove(key + "_mult");
+
+            player.sendSystemMessage(Component.literal(
+                    "§6Bônus de ataque consumido! §7(x" + String.format("%.1f", mult) + ")"));
+            break; // só um por ataque
         }
 
         player.getCapability(SkillDataCapability.PLAYER_SKILL_DATA).ifPresent(data -> {
             float bonus = 0f;
 
-            // ===== Bônus de dano corpo a corpo (DAMAGE_SWORD) =====
             boolean isMelee = event.getSource().getDirectEntity() == player;
             if (isMelee) {
                 bonus += (float) (event.getAmount() * data.getBonus(StatType.DAMAGE_SWORD));
             }
 
-            // ===== Bônus de dano com flecha (DAMAGE_BOW) =====
             boolean isArrow = event.getSource().getDirectEntity() instanceof AbstractArrow;
             if (isArrow) {
                 bonus += (float) (event.getAmount() * data.getBonus(StatType.DAMAGE_BOW));
             }
 
-            // ===== Dano mágico (DAMAGE_MAGIC) =====
             if (event.getSource().getMsgId().equals("indirectMagic")
                     || event.getSource().getMsgId().equals("magic")) {
                 bonus += (float) (event.getAmount() * data.getBonus(StatType.DAMAGE_MAGIC));
