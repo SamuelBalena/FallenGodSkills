@@ -24,13 +24,23 @@ public interface PlayerSkillData {
 
     Set<String> getUnlockedSkillsSet();
 
+    // ===== Cooldowns =====
     Map<String, Long> getCooldowns();
 
     long getCooldownEnd(String skillId);
 
     void setCooldownEnd(String skillId, long timestamp);
 
-    // ===== Bônus acumulados (recalculados quando muda algo) =====
+    // ===== Bindings (slot 0..11 → skillId) =====
+    Map<Integer, String> getSkillBindings();
+
+    String getBindingForSlot(int slot);
+
+    void setBinding(int slot, String skillId);
+
+    int getSlotForSkill(String skillId);
+
+    // ===== Bônus acumulados =====
     Map<StatType, Double> getAccumulatedBonuses();
 
     double getBonus(StatType type);

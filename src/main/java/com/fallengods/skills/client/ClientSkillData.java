@@ -6,11 +6,22 @@ import net.minecraft.nbt.CompoundTag;
 public class ClientSkillData {
     private static final PlayerSkillDataImpl data = new PlayerSkillDataImpl();
 
-    /** Callback que a tela registra pra saber quando os dados mudaram. */
     private static Runnable changeListener = null;
 
     public static void updateFromServer(CompoundTag nbt) {
         data.deserializeNBT(nbt);
+        if (changeListener != null) {
+            changeListener.run();
+        }
+    }
+
+    public static void clear() {
+        data.setPlayerClass(com.fallengods.skills.classsystem.ClassType.NONE);
+        data.setSkillPoints(0);
+        data.getUnlockedSkillsSet().clear();
+        data.getAccumulatedBonuses().clear();
+        data.getSkillBindings().clear();
+        data.getCooldowns().clear();
         if (changeListener != null) {
             changeListener.run();
         }

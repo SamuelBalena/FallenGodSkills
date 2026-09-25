@@ -26,5 +26,9 @@ public class PacketHandler {
                                 PacketOpenClassScreen::handle);
                 INSTANCE.registerMessage(id++, PacketUnlockSkill.class,
                                 PacketUnlockSkill::encode, PacketUnlockSkill::decode, PacketUnlockSkill::handle);
+                INSTANCE.registerMessage(id++, PacketActivateSkill.class,
+                                PacketActivateSkill::encode, PacketActivateSkill::decode, PacketActivateSkill::handle);
+                INSTANCE.registerMessage(id++, PacketBindSkill.class,
+                                PacketBindSkill::encode, PacketBindSkill::decode, PacketBindSkill::handle);
         }
 }

@@ -17,6 +17,7 @@ public class PlayerSkillDataImpl implements PlayerSkillData {
     private int skillPoints = 0;
     private final Set<String> unlockedSkills = new HashSet<>();
     private final Map<String, Long> cooldowns = new HashMap<>();
+    private final Map<Integer, String> skillBindings = new HashMap<>();
     private final Map<StatType, Double> accumulatedBonuses = new EnumMap<>(StatType.class);
 
     @Override
@@ -75,6 +76,34 @@ public class PlayerSkillDataImpl implements PlayerSkillData {
     }
 
     @Override
+    public Map<Integer, String> getSkillBindings() {
+        return skillBindings;
+    }
+
+    @Override
+    public String getBindingForSlot(int slot) {
+        return skillBindings.get(slot);
+    }
+
+    @Override
+    public void setBinding(int slot, String skillId) {
+        if (skillId == null || skillId.isEmpty()) {
+            skillBindings.remove(slot);
+        } else {
+            skillBindings.put(slot, skillId);
+        }
+    }
+
+    @Override
+    public int getSlotForSkill(String skillId) {
+        for (Map.Entry<Integer, String> entry : skillBindings.entrySet()) {
+            if (entry.getValue().equals(skillId))
+                return entry.getKey();
+        }
+        return -1;
+    }
+
+    @Override
     public Map<StatType, Double> getAccumulatedBonuses() {
         return accumulatedBonuses;
     }
@@ -107,7 +136,11 @@ public class PlayerSkillDataImpl implements PlayerSkillData {
         }
         nbt.put("Cooldowns", cdTag);
 
-        // accumulatedBonuses NÃO é persistido — é recalculado no login.
+        CompoundTag bindTag = new CompoundTag();
+        for (Map.Entry<Integer, String> entry : skillBindings.entrySet()) {
+            bindTag.putString(String.valueOf(entry.getKey()), entry.getValue());
+        }
+        nbt.put("SkillBindings", bindTag);
 
         return nbt;
     }
@@ -124,8 +157,16 @@ public class PlayerSkillDataImpl implements PlayerSkillData {
 
         cooldowns.clear();
         CompoundTag cdTag = nbt.getCompound("Cooldowns");
-        for (String key : cdTag.getAllKeys()) {
+        for (String key : cdTag.getAllKeys())
             cooldowns.put(key, cdTag.getLong(key));
+
+        skillBindings.clear();
+        CompoundTag bindTag = nbt.getCompound("SkillBindings");
+        for (String key : bindTag.getAllKeys()) {
+            try {
+                skillBindings.put(Integer.parseInt(key), bindTag.getString(key));
+            } catch (NumberFormatException ignored) {
+            }
         }
 
         accumulatedBonuses.clear();
